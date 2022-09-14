@@ -32,18 +32,18 @@ greet() {
 
 checkNet() {
 	echo -e "${YELLOW}Checking Internet Connection...${NEWLINE}"
-	if nc -zw1 google.com 443
+	if nc -zw1 9.9.9.9 443 #using Quad9 instead of Google or my original alternative of 1.1.1.1 as it wouldn't require DNS and won't be communicating with the botnet
 	then
-  	echo -e "${GREEN}BOOM BABY!${RESET}"
+  	echo -e "${GREEN}WE GET SIGNAL.${RESET}"
 	else
-	echo -e "${RED}Check Internet connection, something went wrong${RESET}"
+	echo -e "${RED}SOMEBODY SET UP US THE BOMB.${RESET}"
 	fi
 }
 
 installer() {
 	echo ${NEWLINE}
 	echo -e "${GREEN}[!] Installing base system...${RESET}${NEWLINE}"
-	pacstrap /mnt base base-devel linux linux-firmware vi vim nano
+	pacstrap /mnt base base-devel linux linux-headers linux-firmware vi vim nano
 	#Generate fstab
 	genfstab -U /mnt >> /mnt/etc/fstab
 	mountpoints=$(cat /mnt/etc/fstab)
@@ -76,13 +76,13 @@ getDrive() {
 	p # Primary partition
 	1 # First partition
 		# EFI - start at beginning of disk
-	+512M # /boot/EFI
-
+	+1G # /boot/EFI
+		# adjusting my boot partition size to make the installation distinguishable among the multiple NVMe SSDs I use
 	n
 	p
 	2
 		# SWAP - start immediately after preceding partition
-	+8G
+	+16G	# adjusting my swap size to make the installation distinguishable among the multiple NVMe SSDs I use
 	n 
 	p
 	3
