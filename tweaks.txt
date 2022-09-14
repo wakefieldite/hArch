@@ -3,8 +3,8 @@ Pre-install commands:
 	sudo systemctl start dhcpcd
 	
 pacman:
-	linux-headers
-	keepassxc yakuake firefox mpd ncmpcpp vmware-workstation virtualbox wildmidi
+	# Added in step 1: linux-headers 
+	# Added in step 2: keepassxc yakuake firefox mpd ncmpcpp vmware-workstation virtualbox wildmidi
 
 Post-install commands:
 sudo modprobe -a vmw_vmci vmmon
