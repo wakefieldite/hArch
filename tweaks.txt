@@ -1,0 +1,15 @@
+Pre-install commands:
+	sudo systemctl enable dhcpcd
+	sudo systemctl start dhcpcd
+	
+pacman:
+	linux-headers
+	keepassxc yakuake firefox mpd ncmpcpp vmware-workstation virtualbox wildmidi
+
+Post-install commands:
+sudo modprobe -a vmw_vmci vmmon
+sudo systemctl enable vmware-networks
+sudo systemctl enable vmware-usbarbitrator
+
+aur:
+	mkinitcpio-firmware
