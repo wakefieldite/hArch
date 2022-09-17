@@ -29,7 +29,7 @@ greet() {
 	echo" ░  ░░ ░  ░   ▒     ░░   ░ ░         ░  ░░ ░     ░ ░    ▒ ░   ░   ░ ░  ░░░ ░ ░  ░    ░  "
 	echo" ░  ░  ░      ░  ░   ░     ░ ░       ░  ░  ░       ░  ░ ░           ░    ░      ░    ░  "
 	echo"                           ░                                                            "
-	echo -3 "${RESET}"
+	echo -e "${RESET}"
 	echo""
 	echo""
 }
