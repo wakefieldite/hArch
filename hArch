@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
-# Harch UEFI/BIO Automated Install (Hackers Arch)
+# hArch UEFI/BIO Automated Install (Hackers' Arch)
 # ---------------------------------------------------------------
 # Author    : Chaotic_Guru                                       |
 # Github    : https://github.com/ChaoticHackingNetwork           |
 # Discord   : https://discord.gg/nv445EX (ChaoticHackingNetwork) |
-# Version   : 0.1.0 											 |
+# Version   : 0.1.1 						 |
 # ---------------------------------------------------------------
 
 GREEN='\033[0;32m'
@@ -17,15 +17,19 @@ RESET='\033[0m'
 NEWLINE=$'\n'
 
 greet() {
-	echo -e "${GREEN}Chaotic_Guru's Harch Installer${RESET}"
+	echo -e "${GREEN}Chaotic_Guru's hArch Installer - Wakefield Remix"
 	echo""
-	echo "╔╗ ╔╗            ╔╗      ╔╗                 "
-	echo "║║ ║║            ║║      ║║                 "
-	echo "║╚═╝║╔══╗ ╔═╗╔══╗║╚═╗    ║║   ╔╗╔═╗ ╔╗╔╗╔╗╔╗"
-	echo "║╔═╗║╚ ╗║ ║╔╝║╔═╝║╔╗║    ║║ ╔╗╠╣║╔╗╗║║║║╚╬╬╝"
-	echo "║║ ║║║╚╝╚╗║║ ║╚═╗║║║║    ║╚═╝║║║║║║║║╚╝║╔╬╬╗"
-	echo "╚╝ ╚╝╚═══╝╚╝ ╚══╝╚╝╚╝    ╚═══╝╚╝╚╝╚╝╚══╝╚╝╚╝"
-	echo""
+	echo" ██░ ██  ▄▄▄       ██▀███   ▄████▄   ██░ ██     ██▓     ██▓ ███▄    █  █    ██ ▒██   ██▒"
+	echo"▓██░ ██▒▒████▄    ▓██ ▒ ██▒▒██▀ ▀█  ▓██░ ██▒   ▓██▒    ▓██▒ ██ ▀█   █  ██  ▓██▒▒▒ █ █ ▒░"
+	echo"▒██▀▀██░▒██  ▀█▄  ▓██ ░▄█ ▒▒▓█    ▄ ▒██▀▀██░   ▒██░    ▒██▒▓██  ▀█ ██▒▓██  ▒██░░░  █   ░"
+	echo"░▓█ ░██ ░██▄▄▄▄██ ▒██▀▀█▄  ▒▓▓▄ ▄██▒░▓█ ░██    ▒██░    ░██░▓██▒  ▐▌██▒▓▓█  ░██░ ░ █ █ ▒ "
+	echo"░▓█▒░██▓ ▓█   ▓██▒░██▓ ▒██▒▒ ▓███▀ ░░▓█▒░██▓   ░██████▒░██░▒██░   ▓██░▒▒█████▓ ▒██▒ ▒██▒"
+	echo" ▒ ░░▒░▒ ▒▒   ▓▒█░░ ▒▓ ░▒▓░░ ░▒ ▒  ░ ▒ ░░▒░▒   ░ ▒░▓  ░░▓  ░ ▒░   ▒ ▒ ░▒▓▒ ▒ ▒ ▒▒ ░ ░▓ ░"
+	echo" ▒ ░▒░ ░  ▒   ▒▒ ░  ░▒ ░ ▒░  ░  ▒    ▒ ░▒░ ░   ░ ░ ▒  ░ ▒ ░░ ░░   ░ ▒░░░▒░ ░ ░ ░░   ░▒ ░"
+	echo" ░  ░░ ░  ░   ▒     ░░   ░ ░         ░  ░░ ░     ░ ░    ▒ ░   ░   ░ ░  ░░░ ░ ░  ░    ░  "
+	echo" ░  ░  ░      ░  ░   ░     ░ ░       ░  ░  ░       ░  ░ ░           ░    ░      ░    ░  "
+	echo"                           ░                                                            "
+	echo -3 "${RESET}"
 	echo""
 	echo""
 }
@@ -34,9 +38,9 @@ checkNet() {
 	echo -e "${YELLOW}Checking Internet Connection...${NEWLINE}"
 	if nc -zw1 9.9.9.9 443 #using Quad9 instead of Google or my original alternative of 1.1.1.1 as it wouldn't require DNS and won't be communicating with the botnet
 	then
-  	echo -e "${GREEN}WE GET SIGNAL.${RESET}"
+  	echo -e "${GREEN}Quad9 is reachable, internet connectivity confirmed.${RESET}"
 	else
-	echo -e "${RED}SOMEBODY SET UP US THE BOMB.${RESET}"
+	echo -e "${RED}Quad9 cannot be reached, please connect to the internet via ethernet or wireless.${RESET}"
 	fi
 }
 
@@ -53,7 +57,7 @@ installer() {
 }
 
 getDrive() {
-	#Find new method to get disk
+	#Find new method to get disk, maybe parted
 	echo ""
 	echo ""
 	echo -e "${GREEN}Gathering drives...${RESET}${NEWLINE}"
@@ -82,7 +86,7 @@ getDrive() {
 	p
 	2
 		# SWAP - start immediately after preceding partition
-	+16G	# adjusting my swap size to make the installation distinguishable among the multiple NVMe SSDs I use
+	+16G	# adjusting my swap size to make the installation distinguishable among the multiple NVMe SSDs I use, is this even necessary with 128GB of ram though?
 	n 
 	p
 	3
@@ -178,16 +182,16 @@ EOF
 lastMinSetup() {
 	#Finish last minute setup
 	echo 0 > /proc/sys/kernel/hung_task_timeout_secs
-	curl -O 'https://raw.githubusercontent.com/ChaoticHackingNetwork/Harch/main/HarchPostV1.0'
-	chmod +x HarchPostV1.0
-	mv HarchPostV1.0 /mnt
+	curl -O 'https://raw.githubusercontent.com/wakefieldite/hArch/main/hArchPost'
+	chmod +x hArchPost
+	mv hArchPost /mnt
 	echo ${NEWLINE}
 	echo "[!] The final script has been installed and move to your new root directory"
 	echo "[!] Run these commands to finish setup"
 	echo ${NEWLLINE}
 	echo ${NEWLLINE}
 	echo -e "${GREEN}[1] arch-chroot /mnt"
-	echo -e "[2] ./HarchPostV1.0${RESET}"
+	echo -e "[2] ./hArchPost${RESET}"
 	echo ${NEWLINE}
 }
 
