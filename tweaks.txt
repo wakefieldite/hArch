@@ -4,12 +4,12 @@ Pre-install commands:
 	
 pacman:
 	# Added in step 1: linux-headers 
-	# Added in step 2: keepassxc yakuake firefox mpd ncmpcpp vmware-workstation virtualbox wildmidi
+	# Added in step 2: 
 
 Post-install commands:
 sudo modprobe -a vmw_vmci vmmon
 sudo systemctl enable vmware-networks
 sudo systemctl enable vmware-usbarbitrator
 
-aur:
-	mkinitcpio-firmware
+Post-install commands:
+	paru -S mkinitcpio-firmware virtualbox-ext-oracle discord tor-browser alacritty-themes freshfetch-git
