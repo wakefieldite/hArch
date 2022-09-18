@@ -18,10 +18,14 @@ NEWLINE=$'\n'
 
 installer() {
 	#Installs needed packages
-	echo -e "${GREEN}[*] Installing packages...${RESET}"
-	echo -e "${YELLOW}[!] Adding Mate/i3 DE${RESET}"
-	pacman -S dhcpcd iwd mlocate cmake neofetch grub pulseaudio git zsh fish dconf-editor leafpad ntfs-3g xorg xorg-server xorg-xinit keepassxc yakuake firefox mpd ncmpcpp vmware-workstation virtualbox wildmidi mate mate-extra i3-gaps i3status lightdm lightdm-gtk-greeter --noconfirm
-	systemctl enable lightdm
+	echo -e "${GREEN}[*] Installing tech stack...${RESET}"
+	echo -e "${YELLOW}[!] i3 is going to be used for your UI.${RESET}"
+	pacman -S dhcpcd iwd mlocate cmake grub paru git ntfs-3g xorg xorg-server xorg-xinit i3-gaps i3status-rust lm_sensors upower speedtest-cli networkmanager ibus bluez alsa-utils iw ly --noconfirm # Base install, use paru for AUR
+	pacman -S yakuake ranger neofetch tmux alacritty fish htop terminus-font flameshot --noconfirm # command line environment 
+	pacman -S pipewire qpwgraph pipewire-alsa pipewire-pulse pipewire-jack mpd ncmpcpp wildmidi mpv --noconfirm # audio/media
+	pacman -S keepassxc firefox obsidian qbittorrent --noconfirm # GUI apps otherwise
+	pacman -S vmware-workstation virtualbox --noconfirm # Virtualization
+	systemctl enable ly
 }
 
 
