@@ -1,0 +1,13 @@
+- Pre-install commands:
+	- sudo systemctl enable dhcpcd
+	- sudo systemctl start dhcpcd
+	
+-pacman:
+	- # Added in step 1: linux-headers 
+	- # Added in step 2: 
+
+- Post-install commands:
+	- sudo modprobe -a vmw_vmci vmmon
+	- sudo systemctl enable vmware-networks
+	- sudo systemctl enable vmware-usbarbitrator
+	- paru -S mkinitcpio-firmware virtualbox-ext-oracle discord tor-browser alacritty-themes freshfetch-git
