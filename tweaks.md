@@ -4,7 +4,7 @@ hArch tweaks
 
 hArchPOST tweaks
 - pacman:
-	- # a lot to add later
+	- a lot to add later
 
 - Post-install commands:
 	- sudo systemctl enable dhcpcd
