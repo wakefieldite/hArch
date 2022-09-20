@@ -1,0 +1,11 @@
+This document serves to provide a list of customizations and reasons why one tool was chosen over another.
+For example: 
+
+**Desktop Environment/Window Manager:** i3-gaps
+  - Originally I was looking to use i3 with some elements from KDE, I've since found all things I really wanted from KDE can be done quite well in i3, so I decided to try just plain i3-gaps. There are however many WMs I want to try, including some for Wayland, maybe I'll experiment more with those when I migrate to Gentoo once this project is finished.
+
+**File Manager:** [ranger](https://github.com/ranger/ranger)
+  - Originally I wanted to use thunar as a file manager because of a riced out thunar I saw with a background image in the navigation pane. I chose to use ranger as a file manager because everything I wanted out of KDE could be achieved using just i3. When I found out I could just use ranger for most things, I decided to give it a shot. The only area of inconvenience I see is that without a file manager I cannot quickly look through files just looking at the thumbnail. However, if I just organize better and use more meaningful names for files, that won't be necessary anyways.
+
+**Terminal Emulator:** alacritty, kitty, and yakuake (konsole)
+  - Originally I was planning on using yakuake and rxvt-unicode because of media previewing in ranger. I later found out I could do the same with alacritty, performance wise alacritty gets a lot of praise and I've also seen kitty alongside it with some special fonts. So far I see no difference performance wise so I'm holding on to both until I can decide on which one to keep. Yakuake is being kept for drop down and multi-tab purposes, primarily used for convencience with hotkeys to show/hide and shift through tabs while running multiple processes simulataneously when doing penetration testing or working on HTB and similar CTFs. The only other reason to keep it is because alacritty and kitty both use GPU power and unless I'm going to pay for some NPK time in AWS, I'm going to want my GPU resources available for hashcat at times and so konsole would be a better choice in terms of conserving resources. Yakuake may end up being replaced by tmux due to being able to see all terminals at once in which case I would probably switch out konsole for xterm or something if I can control the transparency via i3.
