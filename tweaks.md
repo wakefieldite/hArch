@@ -3,6 +3,7 @@ hArch tweaks
 	- linux-headers 
 
 hArchPOST tweaks
+- pacman:
 	- # a lot to add later
 
 - Post-install commands:
