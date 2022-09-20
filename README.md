@@ -12,7 +12,7 @@ Have an old laptop collecting dust? Throw hArch on it.
 Default Features:
 
          Shell = Fish
-         WM/DE = I3/KDE 
+         WM/DE = I3 
          Display Manager = Ly
         
 __________________________________________________________________________________________________________________________________________________________________
