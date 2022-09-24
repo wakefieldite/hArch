@@ -12,4 +12,6 @@ Post-install commands:
 - sudo modprobe -a vmw_vmci vmmon
 - sudo systemctl enable vmware-networks
 - sudo systemctl enable vmware-usbarbitrator
-- paru -S mkinitcpio-firmware virtualbox-ext-oracle discord tor-browser alacritty-themes freshfetch-git
+- paru -S mkinitcpio-firmware virtualbox-ext-oracle discord tor-browser alacritty-themes freshfetch-git ly
+- sudo pacman -R sddm
+- systemctl enable ly
