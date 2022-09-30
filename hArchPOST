@@ -21,7 +21,7 @@ installer() {
 	echo -e "${GREEN}[*] Installing tech stack...${RESET}"
 	echo -e "${YELLOW}[!] i3 is going to be used for your UI.${RESET}"
 	pacman -S dhcpcd iwd mlocate cmake grub paru git ntfs-3g xorg xorg-server xorg-xinit i3-gaps i3status-rust lm_sensors upower speedtest-cli networkmanager ibus bluez alsa-utils iw --noconfirm # Base install, use paru for AUR
-	pacman -S yakuake ranger neofetch tmux alacritty fish htop terminus-font flameshot --noconfirm # command line environment 
+	pacman -S yakuake ranger neofetch tmux w3m ffmpeg ffmpegthumbnailer alacritty fish htop terminus-font flameshot --noconfirm # command line environment 
 	pacman -S pipewire qpwgraph pipewire-alsa pipewire-pulse pipewire-jack mpd ncmpcpp wildmidi mpv --noconfirm # audio/media
 	pacman -S keepassxc firefox obsidian qbittorrent --noconfirm # GUI apps otherwise
 	pacman -S vmware-workstation virtualbox --noconfirm # Virtualization
