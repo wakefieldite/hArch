@@ -15,3 +15,4 @@ Post-install commands:
 - paru -S mkinitcpio-firmware virtualbox-ext-oracle discord tor-browser alacritty-themes freshfetch-git ly
 - sudo pacman -R sddm
 - systemctl enable ly
+- echo "set preview_images true" >> ~/.config/ranger/rc.conf
