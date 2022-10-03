@@ -1,7 +1,7 @@
 ## Email
 - Client Testing
   - [doom emacs](https://github.com/doomemacs/doomemacs)
-  - mutt
+  - [meli](https://github.com/meli/meli)
 - Protonmail Bridge compatibility
 - gpg support
   - does Protonmail support edDSA or importing custom keys yet
@@ -21,3 +21,4 @@
 ## Review main hArch for any necessary adjustments
 ## Pick a fucking wallpaper
 ## Switch to i3 and remove KDE/Plasma Bloatware
+## Configure [wtfutil](https://github.com/wtfutil/wtf)
