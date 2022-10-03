@@ -1,6 +1,6 @@
 ## Email
 - Client Testing
-  - doom emacs
+  - [doom emacs](https://github.com/doomemacs/doomemacs)
   - mutt
 - Protonmail Bridge compatibility
 - gpg support
