@@ -26,7 +26,7 @@ installer() {
 	pacman -S emacs git ripgrep fd --noconfirm # doom emacs prep
 	pacman -S keepassxc firefox obsidian qbittorrent --noconfirm # GUI apps otherwise
 	pacman -S vmware-workstation virtualbox --noconfirm # Virtualization
-	pacman -S openvpn systemd-resolvconf --noconfirm # VPN capabilities
+	pacman -S openvpn pass systemd-resolvconf --noconfirm # Security capabilities
 	pacman -S sddm --noconfirm # adding until it can be replaced by ly in post-install process
 }
 
