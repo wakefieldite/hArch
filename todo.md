@@ -19,7 +19,6 @@
   - consider mopidy
 - Replace htop with btop
   - https://github.com/aristocratos/btop
-## Test mpv for video and audio support
 ## Review main hArch for any necessary adjustments
 ## Pick a fucking wallpaper
 ## Switch to i3 and remove KDE/Plasma Bloatware
