@@ -16,7 +16,6 @@
     - Consider photon needs [alacritty-sixel](https://github.com/microo8/alacritty-sixel)
     - Consider [canard](https://github.com/mrusme/canard) + [journalist](https://github.com/mrusme/journalist) even though it requires running a service over a port.
 - Configure ncmpcpp + mpd
-  - consider mopidy
 - Replace htop with [btop](https://github.com/aristocratos/btop)
 ## Review main hArch for any necessary adjustments
 ## Pick a fucking wallpaper
