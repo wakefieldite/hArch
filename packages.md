@@ -17,3 +17,8 @@ For example:
   <summary>Terminal Emulator: alacritty and yakuake (konsole)</summary>
   Originally I was planning on using yakuake and rxvt-unicode because of media previewing in ranger. I later found out I could do the same with alacritty, performance wise alacritty is supposed to outperform kitty and outperformed rxvt-unicode by far. Yakuake is being kept for drop down and multi-tab purposes, primarily used for convenience with hotkeys to show/hide and shift through tabs while running multiple processes simultaneously when doing penetration testing or working on HTB and similar CTFs. The only other reason to keep it is because alacritty uses GPU power and unless I'm going to pay for some NPK time in AWS, I'm going to want my GPU resources available for hashcat at times and so konsole would be a better choice in terms of conserving resources. Yakuake may end up being replaced by tmux due to being able to see all terminals at once in which case I would probably switch out konsole for xterm or something if I can control the transparency via i3.
 </details>
+
+<details>
+  <summary>Podcast Player: [castero](https://github.com/xgi/castero/)</summary>
+  I like podcasts, I wanted a TUI, because why run a GUI for something that can be done in a TUI and look good in i3-gaps? Why not Shellcaster? By default Shellcaster opens up a GUI window of VLC to play podcasts while castero doesn't create additional windows.
+</details>
