@@ -2,12 +2,12 @@
 This document serves to provide a list of customizations and reasons why one tool was chosen over another.
 For example: 
 <details>
-<summary>Desktop Environment/Window Manager: [i3-gaps](https://archlinux.org/packages/community/x86_64/i3-gaps/)</summary>
-  Originally I was looking to use i3 with some elements from KDE, I've since found all things I really wanted from KDE can be done quite well in i3, so I decided to try just plain i3-gaps. There are however many WMs I want to try, including some for Wayland, maybe I'll experiment more with those when I migrate to Gentoo once this project is finished.</details>
+<summary>Desktop Environment/Window Manager: [i3-gaps-rounded](https://aur.archlinux.org/packages/i3-gaps-rounded-git)</summary>
+  Originally I was looking to use i3 with some elements from KDE, I've since found all things I really wanted from KDE can be done quite well in i3, so I decided to try just i3-gaps-rounded. There are however many WMs I want to try, I would use sway but as an nvidia user the performance hit with free drivers isn't appealing My pay does run Sway though, absolutely love it. If you have AMD GPU or just integrated then Sway may be good for you..</details>
 
 <details>
 <summary>Display Manager: [Ly](https://aur.archlinux.org/packages/ly)</summary>
-  minimalist while still modern. There are plenty of alternatives which would be commandline, such as emptty</details>
+  minimalist while still modern. There are plenty of alternatives which would be commandline, such as emptty. I am however seeing a problem logging out to Ly from i3 where you have to reboot to get back to Ly, so investigating this and hopefully fixing this otherwise I will have to pick a different display manager.</details>
 
 <details>
 <summary>File Manager: [ranger](https://github.com/ranger/ranger) + w3m + ffmpeg + ffmpegthumbnailer</summary>
@@ -15,7 +15,7 @@ For example:
 
 <details>
   <summary>Terminal Emulator: alacritty and yakuake (konsole)</summary>
-  Originally I was planning on using yakuake and rxvt-unicode because of media previewing in ranger. I later found out I could do the same with alacritty, performance wise alacritty is supposed to outperform kitty and outperformed rxvt-unicode by far. Yakuake is being kept for drop down and multi-tab purposes, primarily used for convenience with hotkeys to show/hide and shift through tabs while running multiple processes simultaneously when doing penetration testing or working on HTB and similar CTFs. The only other reason to keep it is because alacritty uses GPU power and unless I'm going to pay for some NPK time in AWS, I'm going to want my GPU resources available for hashcat at times and so konsole would be a better choice in terms of conserving resources. Yakuake may end up being replaced by tmux due to being able to see all terminals at once in which case I would probably switch out konsole for xterm or something if I can control the transparency via i3.
+  Originally I was planning on using yakuake and rxvt-unicode because of media previewing in ranger. I later found out I could do the same with alacritty, performance wise alacritty is supposed to outperform kitty and outperformed rxvt-unicode by far. Yakuake is being kept for drop down, multi-tab purposes, and persistence between workspaces. Primarily used for convenience with hotkeys to show/hide and shift through tabs while running multiple processes simultaneously when doing penetration testing or working on HTB and similar CTFs, plus castero/ncmpcpp in yakuake allows me to pause/play from any workspace. The only other reason to keep it is because alacritty uses GPU power and unless I'm going to pay for some NPK time in AWS, I'm going to want my GPU resources available for hashcat at times and so konsole would be a better choice in terms of conserving resources. Yakuake may end up being replaced by tmux due to being able to see all terminals at once in which case I would probably switch out konsole for xterm or something if I can control the transparency via i3.
 </details>
 
 <details>
