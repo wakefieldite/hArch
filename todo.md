@@ -20,3 +20,5 @@
 ~~## Switch to i3 and remove KDE/Plasma Bloatware~~
 ## Configure [wtfutil](https://github.com/wtfutil/wtf)
 ## Get monero + trezor working
+## Start setting up workspaces/framing
+## Find out that cool music player shit people do for ricing screenshots
