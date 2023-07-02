@@ -16,6 +16,24 @@ check_root() {
   fi
 }
 
+greet() {
+	echo -e "${GREEN}Chaotic_Guru's hArch Installer - OniSec Remix"
+	echo""
+	echo" ██░ ██  ▄▄▄       ██▀███   ▄████▄   ██░ ██     ██▓     ██▓ ███▄    █  █    ██ ▒██   ██▒"
+	echo"▓██░ ██▒▒████▄    ▓██ ▒ ██▒▒██▀ ▀█  ▓██░ ██▒   ▓██▒    ▓██▒ ██ ▀█   █  ██  ▓██▒▒▒ █ █ ▒░"
+	echo"▒██▀▀██░▒██  ▀█▄  ▓██ ░▄█ ▒▒▓█    ▄ ▒██▀▀██░   ▒██░    ▒██▒▓██  ▀█ ██▒▓██  ▒██░░░  █   ░"
+	echo"░▓█ ░██ ░██▄▄▄▄██ ▒██▀▀█▄  ▒▓▓▄ ▄██▒░▓█ ░██    ▒██░    ░██░▓██▒  ▐▌██▒▓▓█  ░██░ ░ █ █ ▒ "
+	echo"░▓█▒░██▓ ▓█   ▓██▒░██▓ ▒██▒▒ ▓███▀ ░░▓█▒░██▓   ░██████▒░██░▒██░   ▓██░▒▒█████▓ ▒██▒ ▒██▒"
+	echo" ▒ ░░▒░▒ ▒▒   ▓▒█░░ ▒▓ ░▒▓░░ ░▒ ▒  ░ ▒ ░░▒░▒   ░ ▒░▓  ░░▓  ░ ▒░   ▒ ▒ ░▒▓▒ ▒ ▒ ▒▒ ░ ░▓ ░"
+	echo" ▒ ░▒░ ░  ▒   ▒▒ ░  ░▒ ░ ▒░  ░  ▒    ▒ ░▒░ ░   ░ ░ ▒  ░ ▒ ░░ ░░   ░ ▒░░░▒░ ░ ░ ░░   ░▒ ░"
+	echo" ░  ░░ ░  ░   ▒     ░░   ░ ░         ░  ░░ ░     ░ ░    ▒ ░   ░   ░ ░  ░░░ ░ ░  ░    ░  "
+	echo" ░  ░  ░      ░  ░   ░     ░ ░       ░  ░  ░       ░  ░ ░           ░    ░      ░    ░  "
+	echo"                           ░                                                            "
+	echo -e "${RESET}"
+	echo""
+	echo""
+}
+
 # Function to ask for the encryption password
 ask_encryption_password() {
   echo -e "${GREEN}[*] Setting the encryption password...${RESET}"
@@ -262,6 +280,7 @@ verify_files() {
 
 # Main script execution
 main() {
+  greet
   check_root
   ask_encryption_password
   securely_wipe_disk
