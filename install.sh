@@ -160,6 +160,12 @@ partition_and_encrypt() {
     exit 1
   fi
 
+  echo -e "${GREEN}[*] Verifying the device mapping for encryption...${RESET}"
+  if ! cryptsetup status cryptroot; then
+    echo "Failed to verify the device mapping for encryption. Please check your system configuration and try again."
+    exit 1
+  fi
+
   echo -e "${GREEN}[*] Adding encryption key to cryptroot...${RESET}"
   if ! echo "$encryption_password" | cryptsetup luksAddKey /dev/mapper/cryptroot -; then
     echo "Failed to add encryption key to cryptroot. Please check your system configuration and try again."
