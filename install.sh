@@ -167,7 +167,7 @@ partition_and_encrypt() {
   fi
 
   echo -e "${GREEN}[*] Adding encryption key to cryptroot...${RESET}"
-  if ! echo "$encryption_password" | cryptsetup luksAddKey /dev/mapper/cryptroot -; then
+  if ! { echo "$encryption_password"; echo "$encryption_password"; echo "$encryption_password"; } | cryptsetup luksAddKey "${dev_path}p2" -; then
     echo "Failed to add encryption key to cryptroot. Please check your system configuration and try again."
     exit 1
   fi
