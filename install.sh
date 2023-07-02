@@ -121,28 +121,64 @@ securely_wipe_disk() {
   fi
 }
 
-
 # Function for partitioning and encrypting the disk
 partition_and_encrypt() {
   echo -e "${GREEN}[*] Partitioning and encrypting the disk...${RESET}"
-  read -ep "Enter your SSD device path [Example: /dev/nvme0n1]: " dev_path
+  read -ep "Enter your SSD device path [Default: /dev/nvme0n1]: " dev_path
+
+  # Set default value if dev_path is empty
+  if [[ -z "$dev_path" ]]; then
+    dev_path="/dev/nvme0n1"
+  fi
 
   if [[ ! -b "$dev_path" ]]; then
     echo "Invalid device path. Please provide a valid SSD device path."
     exit 1
   fi
 
-  if ! parted --script "$dev_path" mklabel gpt mkpart ESP fat32 1MiB 512MiB set 1 boot on mkpart primary 512MiB 100% ||
-    ! mkfs.fat -F32 "${dev_path}p1" ||
-    ! cryptsetup luksFormat --type luks2 --hash sha512 --key-size 512 --iter-time 5000 --pbkdf argon2id --cipher aes-xts-plain64 "${dev_path}p2" ||
-    ! cryptsetup open --type luks "${dev_path}p2" cryptroot ||
-    ! echo "$encryption_password" | cryptsetup luksAddKey /dev/mapper/cryptroot -; then
-    echo "Failed to partition and encrypt the disk. Please check your system configuration and try again."
+  echo -e "${GREEN}[*] Creating partitions on $dev_path...${RESET}"
+  if ! parted --script "$dev_path" mklabel gpt mkpart ESP fat32 1MiB 512MiB set 1 boot on mkpart primary 512MiB 100%; then
+    echo "Failed to create partitions on $dev_path. Please check your system configuration and try again."
+    exit 1
+  fi
+
+  echo -e "${GREEN}[*] Formatting the ESP partition...${RESET}"
+  if ! mkfs.fat -F32 "${dev_path}p1"; then
+    echo "Failed to format the ESP partition. Please check your system configuration and try again."
+    exit 1
+  fi
+
+  echo -e "${GREEN}[*] Creating LUKS container on ${dev_path}p2...${RESET}"
+  if ! cryptsetup luksFormat --type luks2 --hash sha512 --key-size 512 --iter-time 5000 --pbkdf argon2id --cipher aes-xts-plain64 "${dev_path}p2"; then
+    echo "Failed to create LUKS container on ${dev_path}p2. Please check your system configuration and try again."
+    exit 1
+  fi
+
+  echo -e "${GREEN}[*] Opening LUKS container on ${dev_path}p2 as cryptroot...${RESET}"
+  if ! cryptsetup open --type luks "${dev_path}p2" cryptroot; then
+    echo "Failed to open LUKS container on ${dev_path}p2. Please check your system configuration and try again."
+    exit 1
+  fi
+
+  echo -e "${GREEN}[*] Adding encryption key to cryptroot...${RESET}"
+  if ! echo "$encryption_password" | cryptsetup luksAddKey /dev/mapper/cryptroot -; then
+    echo "Failed to add encryption key to cryptroot. Please check your system configuration and try again."
     exit 1
   fi
 
   echo -e "${GREEN}[*] Filling encrypted partition with random data...${RESET}"
-  dd if=/dev/urandom of=/dev/mapper/cryptroot bs=1M status=progress
+  if ! dd if=/dev/urandom of=/dev/mapper/cryptroot bs=1M status=progress; then
+    echo "Failed to fill encrypted partition with random data. Please check your system configuration and try again."
+    exit 1
+  fi
+
+  echo -e "${GREEN}[*] Formatting encrypted partition to Btrfs filesystem...${RESET}"
+  if ! mkfs.btrfs /dev/mapper/cryptroot; then
+    echo "Failed to format encrypted partition to Btrfs filesystem. Please check your system configuration and try again."
+    exit 1
+  fi
+
+  echo -e "${GREEN}[*] Partitioning and encryption completed successfully.${RESET}"
 }
 
 # Function for installing the base system
