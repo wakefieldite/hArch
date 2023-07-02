@@ -18,21 +18,22 @@ check_root() {
 
 greet() {
 	echo -e "${GREEN}Chaotic_Guru's hArch Installer - OniSec Remix"
-	echo""
-	echo" ██░ ██  ▄▄▄       ██▀███   ▄████▄   ██░ ██     ██▓     ██▓ ███▄    █  █    ██ ▒██   ██▒"
-	echo"▓██░ ██▒▒████▄    ▓██ ▒ ██▒▒██▀ ▀█  ▓██░ ██▒   ▓██▒    ▓██▒ ██ ▀█   █  ██  ▓██▒▒▒ █ █ ▒░"
-	echo"▒██▀▀██░▒██  ▀█▄  ▓██ ░▄█ ▒▒▓█    ▄ ▒██▀▀██░   ▒██░    ▒██▒▓██  ▀█ ██▒▓██  ▒██░░░  █   ░"
-	echo"░▓█ ░██ ░██▄▄▄▄██ ▒██▀▀█▄  ▒▓▓▄ ▄██▒░▓█ ░██    ▒██░    ░██░▓██▒  ▐▌██▒▓▓█  ░██░ ░ █ █ ▒ "
-	echo"░▓█▒░██▓ ▓█   ▓██▒░██▓ ▒██▒▒ ▓███▀ ░░▓█▒░██▓   ░██████▒░██░▒██░   ▓██░▒▒█████▓ ▒██▒ ▒██▒"
-	echo" ▒ ░░▒░▒ ▒▒   ▓▒█░░ ▒▓ ░▒▓░░ ░▒ ▒  ░ ▒ ░░▒░▒   ░ ▒░▓  ░░▓  ░ ▒░   ▒ ▒ ░▒▓▒ ▒ ▒ ▒▒ ░ ░▓ ░"
-	echo" ▒ ░▒░ ░  ▒   ▒▒ ░  ░▒ ░ ▒░  ░  ▒    ▒ ░▒░ ░   ░ ░ ▒  ░ ▒ ░░ ░░   ░ ▒░░░▒░ ░ ░ ░░   ░▒ ░"
-	echo" ░  ░░ ░  ░   ▒     ░░   ░ ░         ░  ░░ ░     ░ ░    ▒ ░   ░   ░ ░  ░░░ ░ ░  ░    ░  "
-	echo" ░  ░  ░      ░  ░   ░     ░ ░       ░  ░  ░       ░  ░ ░           ░    ░      ░    ░  "
-	echo"                           ░                                                            "
+	echo ""
+	echo " ██░ ██  ▄▄▄       ██▀███   ▄████▄   ██░ ██     ██▓     ██▓ ███▄    █  █    ██ ▒██   ██▒"
+	echo "▓██░ ██▒▒████▄    ▓██ ▒ ██▒▒██▀ ▀█  ▓██░ ██▒   ▓██▒    ▓██▒ ██ ▀█   █  ██  ▓██▒▒▒ █ █ ▒░"
+	echo "▒██▀▀██░▒██  ▀█▄  ▓██ ░▄█ ▒▒▓█    ▄ ▒██▀▀██░   ▒██░    ▒██▒▓██  ▀█ ██▒▓██  ▒██░░░  █   ░"
+	echo "░▓█ ░██ ░██▄▄▄▄██ ▒██▀▀█▄  ▒▓▓▄ ▄██▒░▓█ ░██    ▒██░    ░██░▓██▒  ▐▌██▒▓▓█  ░██░ ░ █ █ ▒ "
+	echo "░▓█▒░██▓ ▓█   ▓██▒░██▓ ▒██▒▒ ▓███▀ ░░▓█▒░██▓   ░██████▒░██░▒██░   ▓██░▒▒█████▓ ▒██▒ ▒██▒"
+	echo " ▒ ░░▒░▒ ▒▒   ▓▒█░░ ▒▓ ░▒▓░░ ░▒ ▒  ░ ▒ ░░▒░▒   ░ ▒░▓  ░░▓  ░ ▒░   ▒ ▒ ░▒▓▒ ▒ ▒ ▒▒ ░ ░▓ ░"
+	echo " ▒ ░▒░ ░  ▒   ▒▒ ░  ░▒ ░ ▒░  ░  ▒    ▒ ░▒░ ░   ░ ░ ▒  ░ ▒ ░░ ░░   ░ ▒░░░▒░ ░ ░ ░░   ░▒ ░"
+	echo " ░  ░░ ░  ░   ▒     ░░   ░ ░         ░  ░░ ░     ░ ░    ▒ ░   ░   ░ ░  ░░░ ░ ░  ░    ░  "
+	echo " ░  ░  ░      ░  ░   ░     ░ ░       ░  ░  ░       ░  ░ ░           ░    ░      ░    ░  "
+	echo "                           ░                                                            "
 	echo -e "${RESET}"
-	echo""
-	echo""
+	echo ""
+	echo ""
 }
+
 
 # Function to ask for the encryption password
 ask_encryption_password() {
@@ -94,23 +95,35 @@ securely_wipe_disk() {
     echo "Invalid device path. Please provide a valid SSD device path."
     exit 1
   fi
+}
+securely_wipe_disk() {
+  echo -e "${GREEN}[*] Securely wiping the disk...${RESET}"
+  read -p "Enter the SSD device path to securely wipe [Example: /dev/nvme0n1]: " dev_path
 
-  echo -e "${GREEN}[!] Performing ATA Secure Erase on $dev_path...${RESET}"
-  if ! hdparm --user-master u --security-set-pass Eins "$dev_path" ||
-    ! hdparm --user-master u --security-erase Eins "$dev_path"; then
+  if [[ ! -b "$dev_path" ]]; then
+    echo "Invalid device path. Please provide a valid SSD device path."
+    exit 1
+  fi
+
+  echo -e "${GREEN}[!] Performing Secure Erase on $dev_path...${RESET}"
+  if ! nvme format "$dev_path" --ses=1; then
     echo "Failed to securely wipe the disk. Please check your system configuration and try again."
     exit 1
   fi
 
-  echo -e "${GREEN}[*] Disabling TRIM on $dev_path...${RESET}"
-  if hdparm -I "$dev_path" | grep -q "Data Set Management TRIM supported"; then
-    if ! hdparm --user-master u --trim-sector-ranges-stdin --yes-i-know-what-i-am-doing <<< "0 $(blockdev --getsz "$dev_path")" "$dev_path"; then
-      echo "Failed to disable TRIM. Please check your system configuration and try again."
-      exit 1
-    fi
-  else
-    echo "TRIM is not supported on the disk. Skipping TRIM disable."
+  echo -e "${GREEN}[*] Disabling Secure Erase and Cryptographic Erase on $dev_path...${RESET}"
+  if ! nvme sanitize "$dev_path" --sanact=0; then
+    echo "Failed to disable Secure Erase and Cryptographic Erase on the disk. Please check your system configuration and try again."
+    exit 1
   fi
+
+
+  echo -e "${GREEN}[*] Disabling TRIM on $dev_path...${RESET}"
+  if ! nvme set-feature "$dev_path" -f 0x0c -v 0x0; then
+    echo "Failed to disable TRIM. Please check your system configuration and try again."
+    exit 1
+  fi
+
 }
 
 # Function for partitioning and encrypting the disk
