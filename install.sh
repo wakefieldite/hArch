@@ -233,10 +233,20 @@ set_root_password() {
   echo "root:$root_password" | chroot /mnt chpasswd
 }
 
+# Function for setting username 
+ask_username() {
+  while [[ -z $username || $confirm != "y" ]]; do
+    read -p "Enter the username: " username
+    read -p "Confirm username '$username' (y/n): " confirm
+    if [[ $confirm != "y" ]]; then
+      username=""
+    fi
+  done
+}
+
 # Function for setting user info
 set_user_info() {
   echo -e "${GREEN}[*] Setting user info...${RESET}"
-  read -p -r "Enter the username: " username
   arch-chroot /mnt useradd -m -G wheel -s /bin/bash "$username"
   arch-chroot /mnt sed -i 's/^# %wheel ALL=(ALL) ALL/%wheel ALL=(ALL) ALL/' /etc/sudoers
   ask_user_password
@@ -272,19 +282,74 @@ install_blackarch() {
 # Function for installing the graphics driver
 install_graphics_driver() {
   echo -e "${GREEN}[*] Installing the graphics driver...${RESET}"
-  read -p -r "[!] What is your GPU: [amd] [nvidia] or [intel]: " video
+
+  # Check if running in a VirtualBox virtual machine
+  if [[ $(dmidecode -s system-product-name) == *"VirtualBox"* ]]; then
+    video="virtualbox"
+  # Check if running in a VMware virtual machine
+  elif [[ $(dmidecode -s system-product-name) == *"VMware"* ]]; then
+    video="vmware"
+  else
+    gpu_detected=$(lspci | grep -iE "intel|nvidia|amd")
+
+    if grep -qiE "intel|nvidia|amd" <<< "$gpu_detected"; then
+      echo "Detected GPU(s):"
+      echo "$gpu_detected"
+      echo "Please review the detected GPU(s) and confirm the installation."
+      read -p "[?] Do you want to proceed with the installation? [Y/n]: " -r answer
+      answer=${answer:-Y}  # Set default value to "Y" if no input is provided
+      if [[ ! $answer =~ ^[Yy]$ ]]; then
+        echo "Aborted installation."
+        exit 0
+      fi
+
+      if grep -qi "intel" <<< "$gpu_detected"; then
+        video+="intel+"
+      fi
+      if grep -qi "nvidia" <<< "$gpu_detected"; then
+        video+="nvidia+"
+      fi
+      if grep -qi "amd" <<< "$gpu_detected"; then
+        video+="amd+"
+      fi
+      video=${video%} 
+    else
+      echo "Failed to detect the GPU vendor. Please select the appropriate option."
+      echo "[!] What is your GPU vendor: [intel] [nvidia] [amd]: "
+      read -r video
+    fi
+  fi
+
   case $video in
-    amd)
-      arch-chroot /mnt pacman -S xf86-video-ati mesa --noconfirm
+    intel)
+      arch-chroot /mnt pacman -S xf86-video-intel mesa --noconfirm
       ;;
     nvidia)
       arch-chroot /mnt pacman -S nvidia nvidia-settings --noconfirm
       ;;
-    intel)
-      arch-chroot /mnt pacman -S xf86-video-intel mesa intel-ucode --noconfirm
+    amd)
+      arch-chroot /mnt pacman -S xf86-video-amdgpu mesa --noconfirm
+      ;;
+    intel+nvidia)
+      arch-chroot /mnt pacman -S xf86-video-intel nvidia nvidia-settings --noconfirm
+      ;;
+    intel+amd)
+      arch-chroot /mnt pacman -S xf86-video-intel xf86-video-amdgpu mesa --noconfirm
+      ;;
+    nvidia+amd)
+      arch-chroot /mnt pacman -S nvidia nvidia-settings xf86-video-amdgpu mesa --noconfirm
+      ;;
+    intel+nvidia+amd)
+      arch-chroot /mnt pacman -S xf86-video-intel nvidia nvidia-settings xf86-video-amdgpu mesa --noconfirm
+      ;;
+    virtualbox)
+      arch-chroot /mnt pacman -S virtualbox-guest-utils --noconfirm
+      ;;
+    vmware)
+      arch-chroot /mnt pacman -S xf86-video-vmware mesa --noconfirm
       ;;
     *)
-      echo "Invalid GPU selection. Please select either [amd], [nvidia], or [intel]."
+      echo "Invalid GPU selection. Please select either [intel], [nvidia], [amd], [intel+nvidia], [intel+amd], [nvidia+amd], [intel+nvidia+amd], [virtualbox], or [vmware]."
       exit 1
       ;;
   esac
@@ -366,6 +431,7 @@ main() {
   partition_and_encrypt
   installer
   set_root_password
+  ask_username
   set_user_info
   install_software
   install_blackarch
