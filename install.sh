@@ -173,10 +173,11 @@ partition_and_encrypt() {
   fi
 
   echo -e "${GREEN}[*] Filling encrypted partition with random data...${RESET}"
-  if ! dd if=/dev/urandom of=/dev/mapper/cryptroot bs=1M status=progress; then
+  if ! dd if=/dev/urandom of=/dev/mapper/cryptroot bs=1M status=none; then
     echo "Failed to fill encrypted partition with random data. Please check your system configuration and try again."
     exit 1
   fi
+
 
   echo -e "${GREEN}[*] Formatting encrypted partition to Btrfs filesystem...${RESET}"
   if ! mkfs.btrfs /dev/mapper/cryptroot; then
