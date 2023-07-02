@@ -89,20 +89,17 @@ ask_user_password() {
 # Function for securely wiping the disk
 securely_wipe_disk() {
   echo -e "${GREEN}[*] Securely wiping the disk...${RESET}"
-  read -ep "Enter the SSD device path to securely wipe [Example: /dev/nvme0n1]: " dev_path
-
-  if [[ ! -b "$dev_path" ]]; then
-    echo "Invalid device path. Please provide a valid SSD device path."
-    exit 1
-  fi
-}
-securely_wipe_disk() {
-  echo -e "${GREEN}[*] Securely wiping the disk...${RESET}"
   read -p "Enter the SSD device path to securely wipe [Example: /dev/nvme0n1]: " dev_path
 
   if [[ ! -b "$dev_path" ]]; then
     echo "Invalid device path. Please provide a valid SSD device path."
     exit 1
+  fi
+
+  # Check if the device is a virtual NVMe drive
+  if [[ $(nvme id "$dev_path" -o json | jq -r '.nvme_ctrl.vendor_id') == "0x80ee" ]]; then
+    echo "Skipping secure erase and TRIM operations for virtual NVMe drive."
+    return
   fi
 
   echo -e "${GREEN}[!] Performing Secure Erase on $dev_path...${RESET}"
@@ -117,14 +114,13 @@ securely_wipe_disk() {
     exit 1
   fi
 
-
   echo -e "${GREEN}[*] Disabling TRIM on $dev_path...${RESET}"
   if ! nvme set-feature "$dev_path" -f 0x0c -v 0x0; then
     echo "Failed to disable TRIM. Please check your system configuration and try again."
     exit 1
   fi
-
 }
+
 
 # Function for partitioning and encrypting the disk
 partition_and_encrypt() {
