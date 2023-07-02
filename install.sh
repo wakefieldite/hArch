@@ -173,17 +173,39 @@ partition_and_encrypt() {
   fi
 
   echo -e "${GREEN}[*] Filling encrypted partition with random data...${RESET}"
-  if ! dd if=/dev/urandom of=/dev/mapper/cryptroot bs=1M status=none; then
-    echo "Failed to fill encrypted partition with random data. Please check your system configuration and try again."
+random_data_file="/tmp/random_data"
+chunk_size="10M"
+
+# Get the size of the encrypted partition
+total_size=$(blockdev --getsize64 /dev/mapper/cryptroot)
+
+if [[ -z "$total_size" ]]; then
+  echo "Failed to retrieve the size of the encrypted partition. Please check your system configuration."
+  exit 1
+fi
+
+chunk_size_bytes=$((1024 * 1024 * ${chunk_size%[A-Z]*}))
+total_chunks=$(( (total_size + chunk_size_bytes - 1) / chunk_size_bytes ))
+
+for ((i = 0; i < total_chunks; i++)); do
+  dd if=/dev/urandom of="$random_data_file" bs="$chunk_size" count=1 status=none
+  dd if="$random_data_file" of=/dev/mapper/cryptroot bs="$chunk_size" status=none
+done
+
+rm "$random_data_file"
+
+echo -e "${GREEN}[*] Encrypted partition filled with random data successfully.${RESET}"
+
+echo -e "${GREEN}[*] Formatting encrypted partition to Btrfs filesystem...${RESET}"
+if mkfs.btrfs /dev/mapper/cryptroot; then
+  echo -e "${GREEN}[+] Encrypted partition formatted to Btrfs filesystem successfully.${RESET}"
+else
+  echo "Failed to format encrypted partition to Btrfs filesystem. Please check your system configuration and try again."
+  read -p "Press 'e' to exit or any other key to continue: " choice
+  if [[ "$choice" == "e" ]]; then
     exit 1
   fi
-
-
-  echo -e "${GREEN}[*] Formatting encrypted partition to Btrfs filesystem...${RESET}"
-  if ! mkfs.btrfs /dev/mapper/cryptroot; then
-    echo "Failed to format encrypted partition to Btrfs filesystem. Please check your system configuration and try again."
-    exit 1
-  fi
+fi
 
   echo -e "${GREEN}[*] Partitioning and encryption completed successfully.${RESET}"
 }
@@ -191,7 +213,6 @@ partition_and_encrypt() {
 # Function for installing the base system
 installer() {
   echo -e "${GREEN}[*] Installing the base system...${RESET}"
-  mkfs.btrfs /dev/mapper/cryptroot
   mount /dev/mapper/cryptroot /mnt
   mkdir /mnt/boot
   mount "${dev_path}p1" /mnt/boot
