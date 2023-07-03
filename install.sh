@@ -418,13 +418,13 @@ verify_files() {
   root_partition_uuid=$(blkid -s UUID -o value "$root_partition")
 
   # Update root partition entry in /etc/fstab with UUID
-  if ! sed -i "s|^$root_partition[[:space:]]/|UUID=$root_partition_uuid  /  btrfs   defaults,subvol=@  0    1|g" /mnt/etc/fstab; then
+  if ! sed -i "s|^UUID=.*[[:space:]]/|UUID=$root_partition_uuid  /  btrfs   defaults,subvol=@  0  1|" /mnt/etc/fstab; then
     echo "Failed to update root partition entry in /etc/fstab. Please check the file permissions and try again."
     exit 1
   fi
 
   # Verify the success of the root partition update
-  if ! grep -q "UUID=$root_partition_uuid[[:space:]]/  btrfs" /mnt/etc/fstab; then
+  if ! grep -q "UUID=$root_partition_uuid[[:space:]]/  btrfs" /mnt/etc/fstab || ! grep -q "$root_partition" /mnt/etc/fstab; then
     echo "Failed to update root partition entry in /etc/fstab. Please verify the changes manually."
     exit 1
   fi
@@ -432,22 +432,23 @@ verify_files() {
   boot_partition_partlabel="ESP"  # Update this with the correct boot partition PARTLABEL
 
   # Verify boot partition PARTLABEL
-  if ! blkid -t PARTLABEL="$boot_partition_partlabel" >/dev/null; then
-    echo "Boot partition PARTLABEL ($boot_partition_partlabel) not found or inaccessible. Please ensure the correct PARTLABEL is assigned to the boot partition."
-    exit 1
-  fi
+if ! blkid -t PARTLABEL="$boot_partition_partlabel" >/dev/null; then
+  echo "Boot partition PARTLABEL ($boot_partition_partlabel) not found or inaccessible. Please ensure the correct PARTLABEL is assigned to the boot partition."
+  exit 1
+fi
 
-  # Verify boot partition mount point
-  if ! findmnt --target /mnt/boot --source PARTLABEL="$boot_partition_partlabel" >/dev/null; then
-    echo "Boot partition ($boot_partition_partlabel) is not mounted at /mnt/boot. Please ensure it is correctly mounted."
-    exit 1
-  fi
+# Verify boot partition mount point
+if ! findmnt --target /mnt/boot --source PARTLABEL="$boot_partition_partlabel" >/dev/null; then
+  echo "Boot partition ($boot_partition_partlabel) is not mounted at /mnt/boot. Please ensure it is correctly mounted."
+  exit 1
+fi
 
-  # Update boot partition entry in /etc/fstab with PARTLABEL
-  if ! sed -i "s|^PARTLABEL=$boot_partition_partlabel[[:space:]]/boot[[:space:]]|LABEL=$boot_partition_partlabel  /boot  vfat   umask=0077  0  2|g" /mnt/etc/fstab; then
-    echo "Failed to update boot partition entry in /etc/fstab. Please check the file permissions and try again."
-    exit 1
-  fi
+# Update boot partition entry in /etc/fstab with PARTLABEL
+if ! sed -i "s|^UUID=.*[[:space:]]/boot[[:space:]]|LABEL=$boot_partition_partlabel  /boot  vfat   rw,relatime,fmask=0022,dmask=0022,codepage=437,iocharset=ascii,shortname=mixed,utf8,errors=remount-ro  0  2|g" /mnt/etc/fstab; then
+  echo "Failed to update boot partition entry in /etc/fstab. Please check the file permissions and try again."
+  exit 1
+fi
+
 }
 
 # Function to safely unmount all devices
