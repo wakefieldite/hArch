@@ -279,7 +279,6 @@ install_blackarch() {
   fi
 }
 
-# Function for installing the graphics driver
 install_graphics_driver() {
   echo -e "${GREEN}[*] Installing the graphics driver...${RESET}"
 
@@ -298,7 +297,7 @@ install_graphics_driver() {
       echo "Please review the detected GPU(s) and confirm the installation."
       read -p "[?] Do you want to proceed with the installation? [Y/n]: " -r answer
       answer=${answer:-Y}  # Set default value to "Y" if no input is provided
-      if [[ ! $answer =~ ^[Yy]$ ]]; then
+      if [[ ! $answer =~ [Yy] ]]; then
         echo "Aborted installation."
         exit 0
       fi
@@ -436,7 +435,7 @@ main() {
   install_software
   install_blackarch
   install_graphics_driver
-  configure_firewall
+#  configure_firewall
   install_bootloader
   generate_initramfs
   verify_files
