@@ -386,7 +386,7 @@ install_bootloader() {
 # Function for generating initramfs
 generate_initramfs() {
   echo -e "${GREEN}[*] Generating initramfs...${RESET}"
-  arch-chroot /mnt sed -i 's/^HOOKS=\(.*\)filesystems\(.*\)$/HOOKS=(base udev autodetect modconf kms block encrypt btrfs vfat ext4 keyboard fsck)/' /etc/mkinitcpio.conf
+  arch-chroot /mnt sed -i 's/^HOOKS=\(.*\)filesystems\(.*\)$/HOOKS=(base udev autodetect modconf kms block encrypt btrfs keyboard fsck)/' /etc/mkinitcpio.conf
   arch-chroot /mnt mkinitcpio -P
 }
 
