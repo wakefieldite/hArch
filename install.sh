@@ -401,7 +401,7 @@ create_crypttab_entry() {
         crypttab_entry="cryptroot   UUID=$uuid   none   luks"
 
         # Write the crypttab entry to the file
-        echo "$crypttab_entry" | sudo tee /etc/crypttab > /dev/null
+        echo "$crypttab_entry" | sudo tee /mnt/etc/crypttab > /dev/null
 
         echo "crypttab entry created successfully."
     else
