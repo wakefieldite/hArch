@@ -452,9 +452,9 @@ main() {
   install_software
   install_blackarch
   install_graphics_driver
-  install_bootloader
   generate_initramfs
   create_crypttab_entry
+  install_bootloader
   verify_files
   configure_firewall
   safely_unmount_devices
