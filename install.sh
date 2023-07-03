@@ -372,6 +372,13 @@ configure_firewall() {
 install_bootloader() {
   echo -e "${GREEN}[*] Installing bootloader...${RESET}"
   arch-chroot /mnt pacman -S grub efibootmgr --noconfirm
+
+  # Get the UUID of the specified partition
+  root_partition_uuid=$(blkid -s UUID -o value ${dev_path}p2)
+
+  # Update GRUB configuration with the correct UUID
+  arch-chroot /mnt bash -c "echo 'GRUB_CMDLINE_LINUX_DEFAULT=\"cryptdevice=UUID=$root_partition_uuid:root root=/dev/mapper/root\"' >> /etc/default/grub"
+
   arch-chroot /mnt grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB
   arch-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg
 }
@@ -379,8 +386,27 @@ install_bootloader() {
 # Function for generating initramfs
 generate_initramfs() {
   echo -e "${GREEN}[*] Generating initramfs...${RESET}"
-  arch-chroot /mnt sed -i 's/^HOOKS=\(.*\)filesystems\(.*\)$/HOOKS=(base udev autodetect modconf block encrypt btrfs filesystems keyboard fsck)/' /etc/mkinitcpio.conf
+  arch-chroot /mnt sed -i 's/^HOOKS=\(.*\)filesystems\(.*\)$/HOOKS=(base udev autodetect modconf kms block encrypt btrfs vfat ext4 keyboard fsck)/' /etc/mkinitcpio.conf
   arch-chroot /mnt mkinitcpio -P
+}
+
+# Create crypttab entry so we can boot
+create_crypttab_entry() {
+    # Run blkid command to get the UUID of /dev/mapper/cryptroot
+    blkid_output=$(blkid /dev/mapper/cryptroot)
+    uuid=$(echo "$blkid_output" | awk -F 'UUID="' '{print $2}' | awk -F '"' '{print $1}')
+
+    if [[ -n "$uuid" ]]; then
+        # Create the crypttab entry
+        crypttab_entry="cryptroot   UUID=$uuid   none   luks"
+
+        # Write the crypttab entry to the file
+        echo "$crypttab_entry" | sudo tee /etc/crypttab > /dev/null
+
+        echo "crypttab entry created successfully."
+    else
+        echo "Failed to retrieve UUID for /dev/mapper/cryptroot."
+    fi
 }
 
 verify_files() {
@@ -403,52 +429,6 @@ verify_files() {
     echo "File /etc/fstab not found. The system may not be properly configured."
     exit 1
   fi
-
-  echo -e "${GREEN}[*] Verifying root and boot partitions in /etc/fstab...${RESET}"
-
-  root_partition="/dev/mapper/cryptroot"  # Update this with the correct root partition device
-
-  # Verify root partition mount point
-  if ! findmnt --target /mnt/ --source "$root_partition" >/dev/null; then
-    echo "Root partition ($root_partition) is not mounted at /mnt/. Please ensure it is correctly mounted."
-    exit 1
-  fi
-
-  # Get the UUID of the root partition
-  root_partition_uuid=$(blkid -s UUID -o value "$root_partition")
-
-  # Update root partition entry in /etc/fstab with UUID
-  if ! sed -i "s|^UUID=.*[[:space:]]/|UUID=$root_partition_uuid  /  btrfs   defaults,subvol=@  0  1|" /mnt/etc/fstab; then
-    echo "Failed to update root partition entry in /etc/fstab. Please check the file permissions and try again."
-    exit 1
-  fi
-
-  # Verify the success of the root partition update
-  if ! grep -q "UUID=$root_partition_uuid[[:space:]]/  btrfs" /mnt/etc/fstab || ! grep -q "$root_partition" /mnt/etc/fstab; then
-    echo "Failed to update root partition entry in /etc/fstab. Please verify the changes manually."
-    exit 1
-  fi
-
-  boot_partition_partlabel="ESP"  # Update this with the correct boot partition PARTLABEL
-
-  # Verify boot partition PARTLABEL
-if ! blkid -t PARTLABEL="$boot_partition_partlabel" >/dev/null; then
-  echo "Boot partition PARTLABEL ($boot_partition_partlabel) not found or inaccessible. Please ensure the correct PARTLABEL is assigned to the boot partition."
-  exit 1
-fi
-
-# Verify boot partition mount point
-if ! findmnt --target /mnt/boot --source PARTLABEL="$boot_partition_partlabel" >/dev/null; then
-  echo "Boot partition ($boot_partition_partlabel) is not mounted at /mnt/boot. Please ensure it is correctly mounted."
-  exit 1
-fi
-
-# Update boot partition entry in /etc/fstab with PARTLABEL
-if ! sed -i "s|^UUID=.*[[:space:]]/boot[[:space:]]|LABEL=$boot_partition_partlabel  /boot  vfat   rw,relatime,fmask=0022,dmask=0022,codepage=437,iocharset=ascii,shortname=mixed,utf8,errors=remount-ro  0  2|g" /mnt/etc/fstab; then
-  echo "Failed to update boot partition entry in /etc/fstab. Please check the file permissions and try again."
-  exit 1
-fi
-
 }
 
 # Function to safely unmount all devices
@@ -474,6 +454,7 @@ main() {
   install_graphics_driver
   install_bootloader
   generate_initramfs
+  create_crypttab_entry
   verify_files
   configure_firewall
   safely_unmount_devices
