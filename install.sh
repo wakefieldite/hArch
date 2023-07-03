@@ -363,6 +363,7 @@ configure_firewall() {
   arch-chroot /mnt iptables -P FORWARD DROP
   arch-chroot /mnt iptables -P OUTPUT ACCEPT
   arch-chroot /mnt iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+  arch-chroot /mnt iptables -A OUTPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
   arch-chroot /mnt iptables -A INPUT -p icmp --icmp-type echo-request -j ACCEPT
   arch-chroot /mnt sh -c 'iptables-save > /etc/iptables/iptables.rules'
 }
@@ -385,33 +386,75 @@ generate_initramfs() {
 # Function for verifying files and configurations
 verify_files() {
   echo -e "${GREEN}[*] Verifying files and configurations...${RESET}"
+
+  # Check bootloader configuration file
   if [[ ! -f /mnt/boot/grub/grub.cfg ]]; then
     echo "Bootloader configuration file not found. The bootloader may not be installed correctly."
     exit 1
   fi
 
+  # Check initramfs file
   if [[ ! -f /mnt/boot/initramfs-linux.img ]]; then
     echo "Initramfs file not found. The initramfs may not have been generated correctly."
     exit 1
   fi
 
+  # Check /etc/fstab existence
   if [[ ! -f /mnt/etc/fstab ]]; then
     echo "File /etc/fstab not found. The system may not be properly configured."
     exit 1
   fi
 
   echo -e "${GREEN}[*] Verifying root and boot partitions in /etc/fstab...${RESET}"
-  
-  root_partition="/dev/mapper/cryptroot"  # Update this with the correct root partition
-  boot_partition="${dev_path}p1"  # Update this with the correct boot partition
 
-  if ! grep -q "$root_partition" /mnt/etc/fstab; then
-    echo "Root partition ($root_partition) is not properly configured in /etc/fstab."
+  root_partition_label="root"  # Update this with the correct root partition label
+  boot_partition_label="boot"  # Update this with the correct boot partition label
+
+  # Verify root partition label
+  if ! blkid -t PARTLABEL="$root_partition_label" >/dev/null; then
+    echo "Root partition label ($root_partition_label) not found or inaccessible. Please ensure the correct label is assigned to the root partition."
     exit 1
   fi
 
-  if ! grep -q "$boot_partition" /mnt/etc/fstab; then
-    echo "Boot partition ($boot_partition) is not properly configured in /etc/fstab."
+  # Verify boot partition label
+  if ! blkid -t PARTLABEL="$boot_partition_label" >/dev/null; then
+    echo "Boot partition label ($boot_partition_label) not found or inaccessible. Please ensure the correct label is assigned to the boot partition."
+    exit 1
+  fi
+
+  # Verify root partition mount point
+  if ! findmnt --target /mnt/ --source PARTLABEL="$root_partition_label" >/dev/null; then
+    echo "Root partition ($root_partition_label) is not mounted at /mnt/. Please ensure it is correctly mounted."
+    exit 1
+  fi
+
+  # Verify boot partition mount point
+  if ! findmnt --target /mnt/boot --source PARTLABEL="$boot_partition_label" >/dev/null; then
+    echo "Boot partition ($boot_partition_label) is not mounted at /mnt/boot. Please ensure it is correctly mounted."
+    exit 1
+  fi
+
+  # Update root partition entry in /etc/fstab
+  if ! sed -i "s|^PARTLABEL=$root_partition_label[[:space:]]/|LABEL=$root_partition_label  /  btrfs   defaults,subvol=@  0  1|g" /mnt/etc/fstab; then
+    echo "Failed to update root partition entry in /etc/fstab. Please check the file permissions and try again."
+    exit 1
+  fi
+
+  # Update boot partition entry in /etc/fstab
+  if ! sed -i "s|^PARTLABEL=$boot_partition_label[[:space:]]/boot[[:space:]]\+|LABEL=$boot_partition_label  /boot  vfat   umask=0077  0  2|g" /mnt/etc/fstab; then
+    echo "Failed to update boot partition entry in /etc/fstab. Please check the file permissions and try again."
+    exit 1
+  fi
+
+  # Verify the success of the root partition update
+  if ! grep -q "LABEL=$root_partition_label[[:space:]]/  btrfs" /mnt/etc/fstab; then
+    echo "Failed to update root partition entry in /etc/fstab. Please verify the changes manually."
+    exit 1
+  fi
+
+  # Verify the success of the boot partition update
+  if ! grep -q "LABEL=$boot_partition_label[[:space:]]/boot" /mnt/etc/fstab; then
+    echo "Failed to update boot partition entry in /etc/fstab. Please verify the changes manually."
     exit 1
   fi
 
@@ -419,6 +462,13 @@ verify_files() {
 
   echo -e "${GREEN}[!] Please verify that the partitions, file systems, and configurations are set up correctly.${RESET}"
   read -p "Press Enter to continue... " -r
+}
+
+# Function to safely unmount all devices
+safely_unmount_devices() {
+  echo -e "${GREEN}[*] Safely unmounting devices...${RESET}"
+  umount /mnt/boot
+  umount /mnt
 }
 
 # Main script execution
@@ -435,10 +485,11 @@ main() {
   install_software
   install_blackarch
   install_graphics_driver
-#  configure_firewall
   install_bootloader
   generate_initramfs
   verify_files
+  configure_firewall
+  safely_unmount_devices
 }
 
 main
