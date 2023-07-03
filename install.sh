@@ -434,8 +434,13 @@ verify_files() {
 # Function to safely unmount all devices
 safely_unmount_devices() {
   echo -e "${GREEN}[*] Safely unmounting devices...${RESET}"
+
+  # Unmount the encrypted filesystems
   umount /mnt/boot
   umount /mnt
+
+  # Close the encrypted filesystems
+  cryptsetup close cryptroot
 }
 
 # Main script execution
