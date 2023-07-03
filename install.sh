@@ -222,7 +222,7 @@ installer() {
   mount /dev/mapper/cryptroot /mnt
   mkdir /mnt/boot
   mount "${dev_path}p1" /mnt/boot
-  pacstrap /mnt base linux linux-firmware vim intel-ucode btrfs-progs --noconfirm
+  pacstrap /mnt base linux linux-firmware vim intel-ucode btrfs-progs sudo dhcpcd vi iwd  --noconfirm
   genfstab -U /mnt > /mnt/etc/fstab
 }
 
@@ -256,7 +256,7 @@ set_user_info() {
 # Function for installing additional software
 install_software() {
   echo -e "${GREEN}[*] Installing additional software...${RESET}"
-  if ! arch-chroot /mnt pacman -Sy aerc alacritty alsa-utils bluez btop cmake dhcpcd dmenu emacs fd ffmpeg ffmpegthumbnailer firefox fish flameshot git i3-gaps i3status ibus iw iwd keepassxc lm_sensors mlocate mpd mpv ncmpcpp neofetch networkmanager ntfs-3g obsidian openvpn pass pipewire pipewire-alsa pipewire-jack pipewire-pulse qbittorrent qpwgraph ranger ripgrep sddm systemd-resolvconf terminus-font tmux upower virtualbox w3m wildmidi xorg xorg-server xorg-xinit yakuake --noconfirm; then
+  if ! arch-chroot /mnt pacman -Sy aerc alacritty alsa-utils bluez btop cmake dhcpcd dmenu fd ffmpeg ffmpegthumbnailer firefox fish flameshot git ibus iw keepassxc lm_sensors mlocate mpd mpv ncmpcpp neofetch neovim networkmanager ntfs-3g obsidian openvpn pass pipewire pipewire-alsa pipewire-jack pipewire-pulse qbittorrent qpwgraph ranger ripgrep sddm sway systemd-resolvconf terminus-font tmux upower virtualbox w3m wildmidi yakuake --noconfirm; then
     echo "Failed to install additional software. Please check your internet connection and try again."
     exit 1
   fi
@@ -355,8 +355,8 @@ install_graphics_driver() {
 }
 
 # Function for configuring the firewall
-configure_firewall() {
-  echo -e "${GREEN}[*] Configuring firewall...${RESET}"
+configure_networking() {
+  echo -e "${GREEN}[*] Configuring networking...${RESET}"
   arch-chroot /mnt pacman -S --noconfirm iptables
   arch-chroot /mnt systemctl enable iptables.service
   arch-chroot /mnt iptables -P INPUT DROP
@@ -366,6 +366,8 @@ configure_firewall() {
   arch-chroot /mnt iptables -A OUTPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
   arch-chroot /mnt iptables -A INPUT -p icmp --icmp-type echo-request -j ACCEPT
   arch-chroot /mnt sh -c 'iptables-save > /etc/iptables/iptables.rules'
+  arch-chroot /mnt systemctl enable dhcpcd.service
+  arch-chroot /mnt systemctl enable iwd.service
 }
 
 # Function for installing the bootloader
@@ -461,7 +463,7 @@ main() {
   create_crypttab_entry
   install_bootloader
   verify_files
-  configure_firewall
+  configure_networking
   safely_unmount_devices
 }
 
