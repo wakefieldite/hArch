@@ -378,8 +378,8 @@ install_bootloader() {
 # Function for generating initramfs
 generate_initramfs() {
   echo -e "${GREEN}[*] Generating initramfs...${RESET}"
-  arch-chroot /mnt sed -i '/^HOOKS=/s/)$/) encrypt btrfs)/' /etc/mkinitcpio.conf
-  arch-chroot /mnt mkinitcpio -p linux
+  arch-chroot /mnt sed -i 's/^HOOKS=\(.*\)filesystems\(.*\)$/HOOKS=(base udev autodetect modconf block encrypt btrfs filesystems keyboard fsck)/' /etc/mkinitcpio.conf
+  arch-chroot /mnt mkinitcpio -P
 }
 
 # Function for verifying files and configurations
@@ -418,7 +418,7 @@ verify_files() {
   cat /mnt/etc/fstab
 
   echo -e "${GREEN}[!] Please verify that the partitions, file systems, and configurations are set up correctly.${RESET}"
-  read -p -r "Press Enter to continue..."
+  read -p "Press Enter to continue... " -r
 }
 
 # Main script execution
