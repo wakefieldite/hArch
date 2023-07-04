@@ -368,6 +368,7 @@ configure_networking() {
   arch-chroot /mnt sh -c 'iptables-save > /etc/iptables/iptables.rules'
   arch-chroot /mnt systemctl enable dhcpcd.service
   arch-chroot /mnt systemctl enable iwd.service
+  arch-chroot /mnt systemctl enable systemd-resolved.service
 }
 
 # Function for installing the bootloader
