@@ -95,7 +95,7 @@ ask_user_password() {
 # Function for securely wiping the disk
 securely_wipe_disk() {
   echo -e "${GREEN}[*] Securely wiping the disk...${RESET}"
-  read -p "Enter the SSD device path to securely wipe [Example: /dev/nvme0n1]: " dev_path
+  read -p "Enter the SSD device path to securely wipe [Example: /dev/nvme3n1]: " dev_path
 
   if [[ ! -b "$dev_path" ]]; then
     echo "Invalid device path. Please provide a valid SSD device path."
@@ -130,11 +130,11 @@ securely_wipe_disk() {
 # Function for partitioning and encrypting the disk
 partition_and_encrypt() {
   echo -e "${GREEN}[*] Partitioning and encrypting the disk...${RESET}"
-  read -ep "Enter your SSD device path [Default: /dev/nvme0n1]: " dev_path
+  read -ep "Enter your SSD device path [Default: /dev/nvme3n1]: " dev_path
 
   # Set default value if dev_path is empty
   if [[ -z "$dev_path" ]]; then
-    dev_path="/dev/nvme0n1"
+    dev_path="/dev/nvme3n1"
   fi
 
   if [[ ! -b "$dev_path" ]]; then
