@@ -19,18 +19,9 @@ ________________________________________________________________________________
 
 To install, boot into Arch live ISO and:
   
-    1. curl -O https://raw.githubusercontent.com/wakefieldite/hArch/main/hArch
-    2. chmod +x hArch
-    3. ./hArch
-    4. At the end of the hArch shell script, it will download hArchPOST
-    5. arch-chroot /mnt
-    7. ./hArchPOST
-    
-Prior to v1.0.0, tools will be added, until then it is a manual process. Tools will be broken down into categories for a more user preferred system, not every tool is needed. Master tool list is downloaded as of now!!!
-
-    1. Web-Tools = Web App and Network Tools, i.e. Metasploit, Dirbuster etc...
-    2. Cracking-Tools = Cracking tools, i.e Hydra, Hashcat etc...
-    3. Forensic-Tools = Tools for Forensics, i.e. Maltego, Steghide etc...
-    4. Master-toolList = You guessed it, all the tools in one txt file...
-    
-    If you wish to communicate with me on any updates or bugs: Create an issue, or find me on CHN discord until we migrate to Matrix.
+    1. Perform ATA Secure Erase as instructed by your drive manufacturer.
+    2. curl -O https://raw.githubusercontent.com/wakefieldite/hArch/main/install.sh
+    3. chmod +x install.sh
+    4. ./install.sh
+    5. Once logged in, you'll need to add your user to `wheel` and use `visudo` to uncomment your line for wheel group to have sudo permissions if you want sudo permissions.
+    6. No UI is currently provided, I'm currently sorting out Hyprland.
