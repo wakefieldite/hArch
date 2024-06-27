@@ -94,12 +94,15 @@ ask_user_password() {
 
 # Function for securely wiping the disk
 print_securely_wipe_disk_notice() {
+  echo -e "${GREEN} The recommended method to prepare fully encrypted disks the following: ${RESET}"
+  echo ""
   echo "Read https://wiki.archlinux.org/title/Securely_wipe_disk#Preparations_for_block_device_encryption"
   echo ""
-  echo "The recommended method is to perform an ATA Secure Erase using software provided by your drive manufacturer,"
+  echo "Perform an ATA Secure Erase using software provided by your drive manufacturer,"
   echo "Some require creating bootable media and booting into the tool, others can be ran while in the operating system."
   echo "The ATA Secure Erase is essentially resetting to factory default state, though not trusted to be perfect."
   echo "See https://www.micron.com/about/blog/storage/ssd/how-to-securely-erase-micron-sata-ssds"
+  echo ""
   echo "then"
   echo "Filling the disk with /dev/urandom (dd if=/dev/urandom of=/dev/nvme0n1 for example),"
   echo "Filling the disk at this point creates a junk background to install over, one more step to ensuring previous data is lost."
