@@ -93,7 +93,31 @@ ask_user_password() {
 }
 
 # Function for securely wiping the disk
-securely_wipe_disk() {
+print_securely_wipe_disk_notice() {
+  echo "Read https://wiki.archlinux.org/title/Securely_wipe_disk#Preparations_for_block_device_encryption"
+  echo ""
+  echo "The recommended method is to perform an ATA Secure Erase using software provided by your drive manufacturer,"
+  echo "Some require creating bootable media and booting into the tool, others can be ran while in the operating system."
+  echo "The ATA Secure Erase is essentially resetting to factory default state, though not trusted to be perfect."
+  echo "See https://www.micron.com/about/blog/storage/ssd/how-to-securely-erase-micron-sata-ssds"
+  echo "then"
+  echo "Filling the disk with /dev/urandom (dd if=/dev/urandom of=/dev/nvme0n1 for example),"
+  echo "Filling the disk at this point creates a junk background to install over, one more step to ensuring previous data is lost."
+  echo ""
+  echo "then"
+  echo "complete your installation with full disk encryption, ensure TRIM is disabled,"
+  echo "Installing over this with full disk encryption may provide some layer of obscurity, however this may not be perfect either."
+  echo ""
+  echo "then"
+  echo "Fill a file on each partition with /dev/urandom, (dd if=/dev/urandom of=/path/to/file)"
+  echo "and once there is no more space to write, delete the random files."
+  echo "Filling after ensures the entire device is encrypted so forensically,"
+  echo "you just have a sea of encrypted data rather than random data with smaller encrypted areas"
+  echo "that may be possible to identify and reduce the blocks of data to be decrypted."
+  echo "Press any key to continue:"
+  read -n 1 key
+}
+deprecated_securely_wipe_disk() {
   echo -e "${GREEN}[*] Securely wiping the disk...${RESET}"
   read -p "Enter the SSD device path to securely wipe [Example: /dev/nvme3n1]: " dev_path
 
@@ -449,9 +473,10 @@ safely_unmount_devices() {
 # Main script execution
 main() {
   greet
+  print_securely_wipe_disk_notice
   check_root
   ask_encryption_password
-  securely_wipe_disk
+  # deprecated_securely_wipe_disk
   partition_and_encrypt
   installer
   set_root_password
