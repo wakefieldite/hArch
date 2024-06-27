@@ -157,6 +157,7 @@ deprecated_securely_wipe_disk() {
 # Function for partitioning and encrypting the disk
 partition_and_encrypt() {
   echo -e "${GREEN}[*] Partitioning and encrypting the disk...${RESET}"
+  lsblk
   read -ep "Enter your SSD device path [Default: /dev/nvme3n1]: " dev_path
 
   # Set default value if dev_path is empty
