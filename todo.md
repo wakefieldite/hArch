@@ -17,7 +17,7 @@
 - Replace htop with [btop](https://github.com/aristocratos/btop)
 ## Review main hArch for any necessary adjustments
 ~~## Pick a fucking wallpaper~~
-~~## Switch to i3 and remove KDE/Plasma Bloatware~~
+## Get hyprland working without destroying liver
 ## Configure [wtfutil](https://github.com/wtfutil/wtf)
 ## Get monero + trezor working
 ## Start setting up workspaces/framing
