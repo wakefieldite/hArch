@@ -1,45 +1,26 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
-log_file="/var/log/installer.log"
+# Function to log messages
 log() {
-    if [[ ! -d "/var/log" ]]; then
-        mkdir -p "/var/log"
-    fi
-    echo "$(date +'%Y-%m-%d %H:%M:%S') - $1" | tee -a "$log_file"
+    echo "$(date +'%Y-%m-%d %H:%M:%S') - $1"
 }
 
-identify_installation_disk() {
-    log "Identifying installation disk"
-    echo -e "${GREEN}[*] Identifying installation disk...${RESET}"
+# Test the device path validation
+test_device_path() {
+    dev_path=$1
 
-    # Run lsblk command and show output
-    echo "Running command: lsblk -o NAME,SIZE,TYPE,MOUNTPOINT,FSTYPE,LABEL"
-    lsblk -o NAME,SIZE,TYPE,MOUNTPOINT,FSTYPE,LABEL
+    # Debug: Print the device path
+    echo "Testing device path: $dev_path"
 
-    if [ $? -ne 0 ]; then
-        echo "lsblk command failed. Please check your system configuration."
+    # Validate device path
+    if [[ ! -b "$dev_path" ]]; then
+        log "Invalid device path: $dev_path"
+        echo "Invalid device path. Please provide a valid SSD device path."
         exit 1
+    else
+        echo "Valid device path: $dev_path"
     fi
-
-    # Pause to ensure output is visible
-    sleep 2
-
-    echo "Running command: lsblk -o NAME,SIZE,TYPE,MOUNTPOINT,FSTYPE,LABEL | grep -E 'disk|part'"
-    lsblk -o NAME,SIZE,TYPE,MOUNTPOINT,FSTYPE,LABEL | grep -E 'disk|part'
-
-    if [ $? -ne 0 ]; then
-        echo "lsblk + grep command failed. Please check your system configuration."
-        exit 1
-    fi
-
-    # Pause to ensure output is visible
-    sleep 2
 }
 
-main() {
-    log "Script started"
-    identify_installation_disk
-    log "Script completed"
-}
-
-main
+# Example usage
+test_device_path "/dev/nvme0n1"
