@@ -727,6 +727,7 @@ main() {
     greet
     check_root
     encryption_choice=$(ask_full_disk_encryption)
+    lsblk -o NAME,SIZE,TYPE,MOUNTPOINT,FSTYPE,LABEL | grep -E 'disk|part'
     dev_path=$(identify_installation_disk)
     if [ "$encryption_choice" == "y" ]; then
         securely_wipe_disk "$dev_path"
