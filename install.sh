@@ -118,21 +118,8 @@ identify_installation_disk() {
     if [[ ! "$dev_path" =~ ^/dev/ ]]; then
         dev_path="/dev/$dev_path"
     fi
-    
-    # Debug: Print the entered device path
-    echo "You entered: $dev_path"
-    
-    # Validate device path
-    if [[ ! -b "$dev_path" ]]; then
-        log "Invalid device path: $dev_path"
-        echo "Invalid device path. Please provide a valid device path."
-        exit 1
-    else
-        echo "Valid device path: $dev_path"
-    fi
 
     # Display selected device information with partitions
-    lsblk -o NAME,SIZE,TYPE,MOUNTPOINT,FSTYPE,LABEL "$dev_path"
     echo "[!] You have selected $dev_path for installation. Please make sure this is the correct drive."
     
     # Confirm user's choice
@@ -186,8 +173,7 @@ partition_and_encrypt() {
 
     log "Partitioning and setting up the SSD"
     echo -e "${GREEN}[*] Creating boot partition...${RESET}"
-    lsblk
-
+   
     # Validate device path
     if [[ ! -b "$dev_path" ]]; then
         log "Invalid device path: $dev_path"
