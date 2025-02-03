@@ -113,10 +113,9 @@ identify_installation_disk() {
     log "Identifying installation disk"
     echo -e "${GREEN}[*] Identifying installation disk...${RESET}"
 
-    # Run lsblk command and show output
+    # Run lsblk command and log output
     echo "Running command: lsblk -o NAME,SIZE,TYPE,MOUNTPOINT,FSTYPE,LABEL"
-    lsblk -o NAME,SIZE,TYPE,MOUNTPOINT,FSTYPE,LABEL > /tmp/lsblk_output.txt 2>&1
-    cat /tmp/lsblk_output.txt
+    lsblk -o NAME,SIZE,TYPE,MOUNTPOINT,FSTYPE,LABEL | tee /tmp/lsblk_output.txt
     if [ $? -ne 0 ]; then
         echo "lsblk command failed. Please check your system configuration."
         exit 1
@@ -126,8 +125,7 @@ identify_installation_disk() {
     sleep 2
 
     echo "Running command: lsblk -o NAME,SIZE,TYPE,MOUNTPOINT,FSTYPE,LABEL | grep -E 'disk|part'"
-    lsblk -o NAME,SIZE,TYPE,MOUNTPOINT,FSTYPE,LABEL | grep -E 'disk|part' > /tmp/lsblk_grep_output.txt 2>&1
-    cat /tmp/lsblk_grep_output.txt
+    lsblk -o NAME,SIZE,TYPE,MOUNTPOINT,FSTYPE,LABEL | grep -E 'disk|part' | tee /tmp/lsblk_grep_output.txt
     if [ $? -ne 0 ]; then
         echo "lsblk + grep command failed. Please check your system configuration."
         exit 1
@@ -148,8 +146,7 @@ identify_installation_disk() {
 
     # Display selected device information with partitions
     echo "Running command: lsblk -o NAME,SIZE,TYPE,MOUNTPOINT,FSTYPE,LABEL $dev_path"
-    lsblk -o NAME,SIZE,TYPE,MOUNTPOINT,FSTYPE,LABEL "$dev_path" > /tmp/lsblk_dev_output.txt 2>&1
-    cat /tmp/lsblk_dev_output.txt
+    lsblk -o NAME,SIZE,TYPE,MOUNTPOINT,FSTYPE,LABEL "$dev_path" | tee /tmp/lsblk_dev_output.txt
 
     echo -e "${YELLOW}[!] You have selected $dev_path for installation. Please make sure this is the correct drive.${RESET}"
     
