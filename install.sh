@@ -44,6 +44,19 @@ greet() {
     echo -e "${RESET}\n\n"
 }
 
+# Function to ask if the user wants full disk encryption
+ask_full_disk_encryption() {
+    log "Prompting for full disk encryption choice"
+    while true; do
+        read -rp "Do you want to enable full disk encryption? (y/n): " encryption_choice
+        case $encryption_choice in
+            [Yy]* ) echo "y"; return ;;
+            [Nn]* ) echo "n"; return ;;
+            * ) echo "Please answer y or n." ;;
+        esac
+    done
+}
+
 # Function to ask for the root password
 ask_root_password() {
     log "Prompting for root password"
