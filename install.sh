@@ -113,9 +113,18 @@ identify_installation_disk() {
     log "Identifying installation disk"
     echo -e "${GREEN}[*] Identifying installation disk...${RESET}"
 
+    # Debug: Print the command to be executed
+    echo "Running command: lsblk -o NAME,SIZE,TYPE,MOUNTPOINT,FSTYPE,LABEL | grep -E 'disk|part'"
+
     # List all connected drives, their partitions, and sizes
     lsblk -o NAME,SIZE,TYPE,MOUNTPOINT,FSTYPE,LABEL | grep -E 'disk|part'
-    
+
+    # Debug: Check the exit status of the lsblk command
+    if [ $? -ne 0 ]; then
+        echo "lsblk command failed. Please check your system configuration."
+        exit 1
+    fi
+
     # Prompt user to identify the installation disk
     read -erp "Enter the device path you want to install to [e.g., /dev/sda, /dev/nvme0n1]: " dev_path
 
@@ -131,7 +140,7 @@ identify_installation_disk() {
     echo -e "${YELLOW}[!] You have selected $dev_path for installation. Please make sure this is the correct drive.${RESET}"
     
     # Confirm user's choice
-    read -rp "Are you sure you want to install on $dev_path? This will erase all data on the drive. (y/n): " confirm_choice
+    read -p "Are you sure you want to install on $dev_path? This will erase all data on the drive. (y/n): " confirm_choice
     [ "$confirm_choice" != "y" ] && { log "Installation disk selection canceled by user"; echo "Installation disk selection canceled."; exit 1; }
 
     echo "$dev_path"
