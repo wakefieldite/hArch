@@ -112,13 +112,23 @@ execute_command() {
 identify_installation_disk() {
     log "Identifying installation disk"
     # Prompt user to identify the installation disk
-    read -erp "Enter the device path you want to install to [e.g., /dev/sda, /dev/nvme0n1]: " dev_path
+    read -erp "Enter the device you want to install to [e.g., sda, nvme0n1]: " dev_path
 
+    # Ensure the device path includes /dev/
+    if [[ ! "$dev_path" =~ ^/dev/ ]]; then
+        dev_path="/dev/$dev_path"
+    fi
+    
+    # Debug: Print the entered device path
+    echo "You entered: $dev_path"
+    
     # Validate device path
     if [[ ! -b "$dev_path" ]]; then
         log "Invalid device path: $dev_path"
         echo "Invalid device path. Please provide a valid device path."
         exit 1
+    else
+        echo "Valid device path: $dev_path"
     fi
 
     # Display selected device information with partitions
