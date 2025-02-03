@@ -173,7 +173,11 @@ partition_and_encrypt() {
 
     log "Partitioning and setting up the SSD"
     echo -e "${GREEN}[*] Creating boot partition...${RESET}"
-   
+
+    # Debug: Print dev_path and encryption_choice
+    echo "Debug: dev_path is $dev_path"
+    echo "Debug: encryption_choice is $encryption_choice"
+    
     # Validate device path
     if [[ ! -b "$dev_path" ]]; then
         log "Invalid device path: $dev_path"
