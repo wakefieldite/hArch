@@ -109,23 +109,32 @@ execute_command() {
     fi
 }
 
-debug_lsblk() {
-    echo "Starting debug_lsblk function"
-    echo "Running command: lsblk -o NAME,SIZE,TYPE,MOUNTPOINT,FSTYPE,LABEL"
-    lsblk -o NAME,SIZE,TYPE,MOUNTPOINT,FSTYPE,LABEL
-    if [ $? -ne 0 ]; then
-        echo "lsblk command failed. Please check your system configuration."
-    fi
-    echo "Completed debug_lsblk function"
-    sleep 2
-}
-
 identify_installation_disk() {
     log "Identifying installation disk"
     echo -e "${GREEN}[*] Identifying installation disk...${RESET}"
 
-    # Debug lsblk output
-    debug_lsblk
+    # Run lsblk command and show output
+    echo "Running command: lsblk -o NAME,SIZE,TYPE,MOUNTPOINT,FSTYPE,LABEL"
+    lsblk -o NAME,SIZE,TYPE,MOUNTPOINT,FSTYPE,LABEL
+
+    if [ $? -ne 0 ]; then
+        echo "lsblk command failed. Please check your system configuration."
+        exit 1
+    fi
+
+    # Pause to ensure output is visible
+    sleep 2
+
+    echo "Running command: lsblk -o NAME,SIZE,TYPE,MOUNTPOINT,FSTYPE,LABEL | grep -E 'disk|part'"
+    lsblk -o NAME,SIZE,TYPE,MOUNTPOINT,FSTYPE,LABEL | grep -E 'disk|part'
+
+    if [ $? -ne 0 ]; then
+        echo "lsblk + grep command failed. Please check your system configuration."
+        exit 1
+    fi
+
+    # Pause to ensure output is visible
+    sleep 2
 
     # Prompt user to identify the installation disk
     read -erp "Enter the device path you want to install to [e.g., /dev/sda, /dev/nvme0n1]: " dev_path
