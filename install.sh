@@ -111,19 +111,10 @@ execute_command() {
 
 identify_installation_disk() {
     log "Identifying installation disk"
-    echo -e "${GREEN}[*] Identifying installation disk...${RESET}"
+    echo "[*] Identifying installation disk..."
 
-    # Run fdisk -l command and log output
-    echo "Running command: fdisk -l"
-    fdisk -l > /tmp/fdisk_output.txt 2>&1
-    cat /tmp/fdisk_output.txt
-    if [ $? -ne 0 ]; then
-        echo "fdisk command failed. Please check your system configuration."
-        exit 1
-    fi
-
-    # Pause to ensure output is visible
-    sleep 2
+    # Run lsblk command and log output
+    lsblk -o NAME,SIZE,TYPE,MOUNTPOINT,FSTYPE,LABEL | grep -E 'disk|part'
 
     # Prompt user to identify the installation disk
     read -erp "Enter the device path you want to install to [e.g., /dev/sda, /dev/nvme0n1]: " dev_path
@@ -136,11 +127,8 @@ identify_installation_disk() {
     fi
 
     # Display selected device information with partitions
-    echo "Running command: fdisk -l $dev_path"
-    fdisk -l "$dev_path" > /tmp/fdisk_dev_output.txt 2>&1
-    cat /tmp/fdisk_dev_output.txt
-
-    echo -e "${YELLOW}[!] You have selected $dev_path for installation. Please make sure this is the correct drive.${RESET}"
+    lsblk -o NAME,SIZE,TYPE,MOUNTPOINT,FSTYPE,LABEL "$dev_path"
+    echo "[!] You have selected $dev_path for installation. Please make sure this is the correct drive."
     
     # Confirm user's choice
     read -p "Are you sure you want to install on $dev_path? This will erase all data on the drive. (y/n): " confirm_choice
