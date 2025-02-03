@@ -111,11 +111,6 @@ execute_command() {
 
 identify_installation_disk() {
     log "Identifying installation disk"
-    echo "[*] Identifying installation disk..."
-
-    # Run lsblk command and log output
-    lsblk -o NAME,SIZE,TYPE,MOUNTPOINT,FSTYPE,LABEL | grep -E 'disk|part'
-
     # Prompt user to identify the installation disk
     read -erp "Enter the device path you want to install to [e.g., /dev/sda, /dev/nvme0n1]: " dev_path
 
