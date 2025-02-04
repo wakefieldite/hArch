@@ -1,25 +1,12 @@
-#!/bin/bash
+# Function to validate device path
+validate_device_path() {
+    local dev_path=$1
 
-log() {
-    echo "$(date +'%Y-%m-%d %H:%M:%S') - $1"
-}
-
-partition_and_encrypt() {
-    dev_path=$1
-    encryption_choice=$2
-
-    log "Partitioning and setting up the SSD"
-    echo -e "${GREEN}[*] Creating boot partition...${RESET}"
-
-    # Debug: Print dev_path and encryption_choice
-    echo "Debug: dev_path is $dev_path"
-    echo "Debug: encryption_choice is $encryption_choice"
-
-    # Ensure the device path includes /dev/
+    # Check if the path includes /dev/
     if [[ ! "$dev_path" =~ ^/dev/ ]]; then
         dev_path="/dev/$dev_path"
     fi
-    
+
     # Debug: Print the corrected device path
     echo "Corrected device path: $dev_path"
 
@@ -29,6 +16,20 @@ partition_and_encrypt() {
         echo "Invalid device path. Please provide a valid SSD device path."
         exit 1
     fi
+
+    echo "$dev_path"
+}
+
+partition_and_encrypt() {
+    dev_path=$(validate_device_path "$1")
+    encryption_choice=$2
+
+    log "Partitioning and setting up the SSD"
+    echo -e "${GREEN}[*] Creating boot partition...${RESET}"
+
+    # Debug: Print dev_path and encryption_choice
+    echo "Debug: dev_path is $dev_path"
+    echo "Debug: encryption_choice is $encryption_choice"
 
     # Create partitions and format ESP
     execute_command "parted --script $dev_path mklabel gpt mkpart ESP fat32 1MiB 512MiB set 1 boot on mkpart primary 512MiB 100%" "create partitions on $dev_path"
@@ -53,9 +54,6 @@ main() {
 
     # Prompt user to identify the installation disk
     read -erp "Enter the device path you want to install to [e.g., /dev/sda, /dev/nvme0n1]: " dev_path
-
-    # Debug: Print the entered device path
-    echo "You entered: $dev_path"
 
     encryption_choice="y" # or prompt user for encryption choice
 
