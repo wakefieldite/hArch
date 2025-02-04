@@ -2,9 +2,9 @@
 
 log_file="/var/log/installer.log"
 log() {
-    local message="$1"
-    echo "$(date +'%Y-%m-%d %H:%M:%S') - $message" | tee -a "$log_file"
+    echo "$(date +'%Y-%m-%d %H:%M:%S') - $1" | tee -a "$log_file"
 }
+
 
 
 GREEN='\033[0;32m'
@@ -190,28 +190,31 @@ partition_and_encrypt() {
     encryption_choice=$2
 
     log "Partitioning and setting up the SSD"
+    echo "Debug Before Parted: dev_path = $dev_path"
     echo -e "${GREEN}[*] Creating boot partition...${RESET}"
 
-    # Debug: Print dev_path and encryption_choice
-    echo "Debug: dev_path is $dev_path"
-    echo "Debug: encryption_choice is $encryption_choice"
+    echo "Debug After echo: dev_path = $dev_path"
+    
+    parted --script $dev_path mklabel gpt mkpart ESP fat32 1MiB 512MiB set 1 boot on mkpart primary 512MiB 100%
+    echo "Debug After Parted: dev_path = $dev_path"
 
-    # Create partitions and format ESP
-    execute_command "parted --script $dev_path mklabel gpt mkpart ESP fat32 1MiB 512MiB set 1 boot on mkpart primary 512MiB 100%" "create partitions on $dev_path"
-    execute_command "mkfs.fat -F32 ${dev_path}p1" "format the ESP partition"
+    mkfs.fat -F32 ${dev_path}p1
+    echo "Debug After mkfs: dev_path = $dev_path"
 
     if [ "$encryption_choice" == "y" ]; then
         log "Prompting for encryption password for LUKS container"
         echo -e "${GREEN}[*] Creating LUKS container on ${dev_path}p2...${RESET}"
         cryptsetup luksFormat --type luks2 --hash sha512 --key-size 512 --iter-time 5000 --pbkdf argon2id --cipher aes-xts-plain64 --sector-size 4096 "${dev_path}p2"
+        
+        echo "Debug After LUKS format: dev_path = $dev_path"
 
-        echo -e "${GREEN}[*] Opening LUKS container on ${dev_path}p2 as cryptroot...${RESET}"
         cryptsetup open --type luks "${dev_path}p2" cryptroot
+        echo "Debug After LUKS open: dev_path = $dev_path"
 
-        # Verify device mapping for encryption
-        execute_command "cryptsetup status cryptroot" "verify the device mapping for encryption"
+        cryptsetup status cryptroot
     fi
 }
+
 
 
 fill_encrypted_partition_with_random_data() {
@@ -715,19 +718,15 @@ safely_unmount_devices() {
     fi
 }
 
-}
-
 main() {
     log "Script started"
 
     dev_path=$(identify_installation_disk)
     echo "Debug: dev_path after identify_installation_disk is $dev_path"
-    
+
     encryption_choice="y" 
 
-    securely_wipe_disk "$dev_path"
     echo "Debug: dev_path before partition_and_encrypt is $dev_path"
-
     partition_and_encrypt "$dev_path" "$encryption_choice"
     echo "Debug: dev_path after partition_and_encrypt is $dev_path"
 
