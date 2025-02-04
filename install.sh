@@ -137,6 +137,9 @@ identify_installation_disk() {
         dev_path="/dev/$dev_path"
     fi
 
+    # Debug: Print the device path
+    echo "Debug: Installation device path is $dev_path"
+
     # Display selected device information with partitions
     echo "[!] You have selected $dev_path for installation. Please make sure this is the correct drive."
     
@@ -184,6 +187,10 @@ partition_and_encrypt() {
 
     log "Partitioning and setting up the SSD"
     echo -e "${GREEN}[*] Creating boot partition...${RESET}"
+
+    # Debug: Print dev_path and encryption_choice
+    echo "Debug: dev_path is $dev_path"
+    echo "Debug: encryption_choice is $encryption_choice"
 
     # Create partitions and format ESP
     execute_command "parted --script $dev_path mklabel gpt mkpart ESP fat32 1MiB 512MiB set 1 boot on mkpart primary 512MiB 100%" "create partitions on $dev_path"
