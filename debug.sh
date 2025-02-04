@@ -1,3 +1,11 @@
+log_file="/var/log/installer.log"
+log() {
+    if [[ ! -d "/var/log" ]]; then
+        mkdir -p "/var/log"
+    fi
+    echo "$(date +'%Y-%m-%d %H:%M:%S') - $1" | tee -a "$log_file"
+}
+
 identify_installation_disk() {
     log "Identifying installation disk"
     # Prompt user to identify the installation disk
