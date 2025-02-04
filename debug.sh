@@ -2,11 +2,10 @@
 
 log_file="/var/log/installer.log"
 log() {
-    if [[ ! -d "/var/log" ]]; then
-        mkdir -p "/var/log"
-    fi
-    echo "$(date +'%Y-%m-%d %H:%M:%S') - $1" | tee -a "$log_file"
+    local message="$1"
+    echo "$(date +'%Y-%m-%d %H:%M:%S') - $message" | tee -a "$log_file"
 }
+
 
 GREEN='\033[0;32m'
 PURPLE='\033[0;35m'
@@ -716,13 +715,15 @@ safely_unmount_devices() {
     fi
 }
 
+}
+
 main() {
     log "Script started"
 
     dev_path=$(identify_installation_disk)
     echo "Debug: dev_path after identify_installation_disk is $dev_path"
     
-    encryption_choice="y" # or prompt user for encryption choice
+    encryption_choice="y" 
 
     securely_wipe_disk "$dev_path"
     echo "Debug: dev_path before partition_and_encrypt is $dev_path"
