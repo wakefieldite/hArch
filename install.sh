@@ -109,6 +109,24 @@ execute_command() {
     fi
 }
 
+validate_device_path() {
+    local dev_path=$1
+
+    # Ensure the device path includes /dev/
+    if [[ ! "$dev_path" =~ ^/dev/ ]]; then
+        dev_path="/dev/$dev_path"
+    fi
+
+    # Validate device path
+    if [[ ! -b "$dev_path" ]]; then
+        log "Invalid device path: $dev_path"
+        echo "Invalid device path. Please provide a valid SSD device path."
+        exit 1
+    fi
+
+    echo "$dev_path"
+}
+
 identify_installation_disk() {
     log "Identifying installation disk"
     # Prompt user to identify the installation disk
@@ -130,16 +148,9 @@ identify_installation_disk() {
 }
 
 securely_wipe_disk() {
-    dev_path=$1
+    dev_path=$(validate_device_path "$1")
     log "Securely wiping the disk initiated"
     echo -e "${GREEN}[*] Securely wiping the disk...${RESET}"
-
-    # Validate device path
-    if [[ ! -b "$dev_path" ]]; then
-        log "Invalid device path: $dev_path"
-        echo "Invalid device path. Please provide a valid SSD device path."
-        exit 1
-    fi
 
     # Check if the device is an NVMe drive
     if ! nvme id-ctrl "$dev_path" &>/dev/null; then
@@ -168,29 +179,17 @@ securely_wipe_disk() {
 }
 
 partition_and_encrypt() {
-    dev_path=$1
+    dev_path=$(validate_device_path "$1")
     encryption_choice=$2
 
     log "Partitioning and setting up the SSD"
     echo -e "${GREEN}[*] Creating boot partition...${RESET}"
-
-    # Debug: Print dev_path and encryption_choice
-    echo "Debug: dev_path is $dev_path"
-    echo "Debug: encryption_choice is $encryption_choice"
-    
-    # Validate device path
-    if [[ ! -b "$dev_path" ]]; then
-        log "Invalid device path: $dev_path"
-        echo "Invalid device path. Please provide a valid SSD device path."
-        exit 1
-    fi
 
     # Create partitions and format ESP
     execute_command "parted --script $dev_path mklabel gpt mkpart ESP fat32 1MiB 512MiB set 1 boot on mkpart primary 512MiB 100%" "create partitions on $dev_path"
     execute_command "mkfs.fat -F32 ${dev_path}p1" "format the ESP partition"
 
     if [ "$encryption_choice" == "y" ]; then
-        # Create LUKS container and open it
         log "Prompting for encryption password for LUKS container"
         echo -e "${GREEN}[*] Creating LUKS container on ${dev_path}p2...${RESET}"
         cryptsetup luksFormat --type luks2 --hash sha512 --key-size 512 --iter-time 5000 --pbkdf argon2id --cipher aes-xts-plain64 --sector-size 4096 "${dev_path}p2"
@@ -218,7 +217,7 @@ fill_encrypted_partition_with_random_data() {
 }
 
 createLVM2() {
-    dev_path=$1
+    dev_path=$(validate_device_path "$1")
     encryption_choice=$2
     vg_name="lvmcrypt"
     pv_path="/dev/mapper/cryptroot"
@@ -285,7 +284,7 @@ formatPartitions() {
 }
 
 mountFilesystems() {
-    dev_path=$1
+    dev_path=$(validate_device_path "$1")
     encryption_choice=$2
     log "Mounting filesystems"
     echo -e "${GREEN}[*] Installing the base system...${RESET}"
@@ -401,13 +400,12 @@ else
     fi
 fi
 
-
     log "ZRAM configured successfully, swap removed, home LV expanded, and zramswap service created"
     echo -e "${GREEN}[*] ZRAM configured, swap removed, home LV expanded, and zramswap service created.${RESET}"
 }
 
 add_mount_options_to_fstab() {
-    dev_path=$1
+    dev_path=$(validate_device_path "$1")
     encryption_choice=$2
     log "Adding mount options to /etc/fstab"
     echo -e "${GREEN}[*] Adding mount options to /etc/fstab...${RESET}"
@@ -607,7 +605,7 @@ configure_networking() {
 }
 
 install_bootloader() {
-    dev_path=$1
+    dev_path=$(validate_device_path "$1")
     encryption_choice=$2
     log "Installing bootloader"
     echo -e "${GREEN}[*] Installing bootloader...${RESET}"
