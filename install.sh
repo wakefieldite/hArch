@@ -92,7 +92,7 @@ validate_device_path() {
 
     # Validate device path
     if [[ ! -b "$dev_path" ]]; then
-        echo "Invalid device path. Please provide a valid SSD device path."
+        echo "Invalid device path: $dev_path. Please provide a valid SSD device path."
         exit 1
     fi
 
@@ -113,7 +113,12 @@ identify_installation_disk() {
     
     # Confirm user's choice
     read -p "Are you sure you want to install on $dev_path? This will erase all data on the drive. (y/n): " confirm_choice
-    [ "$confirm_choice" != "y" ] && echo "Installation disk selection canceled." && exit 1
+    if [[ "$confirm_choice" != "y" ]]; then
+        echo "Installation disk selection canceled."
+        exit 1
+    fi
+
+    dev_path=$(validate_device_path "$dev_path")
 
     echo "$dev_path"
 }
