@@ -1,22 +1,14 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-# Colors for messages
-GREEN='\033[0;32m'
-PURPLE='\033[0;35m'
-RESET='\033[0m'
-
-# Declare global variables
-declare -g root_password
-declare -g user_password
-declare -g username
+declare -g root_password  # Declare root_password as a global variable
+declare -g user_password  # Declare user_password as a global variable
+declare -g username  # Declare username as a global variable
 declare -g dev_path
 
-# Function to check if script is running as root
 check_root() {
     [[ $EUID -ne 0 ]] && echo "Please run the script as root." && exit 1
 }
 
-# Greeting function
 greet() {
     echo -e "${PURPLE}hArch Installer - OniSec Remix\n"
     echo "
@@ -24,7 +16,7 @@ greet() {
     ██║░░██║██╔══██╗██╔══██╗██║░██╔╝██╔════╝██╔══██╗██╔════╝╚█║
     ███████║███████║██║░░╚═╝█████═╝░█████╗░░██████╔╝╚█████╗░░╚╝
     ██╔══██║██╔══██║██║░░██╗██╔═██╗░██╔══╝░░██╔══██╗░╚═══██╗░░░
-    ██║░░██║██║░░██║╚█████╔╝██║░╚██╗███████╗██║░░██║██████╔╝░░░
+    ██║░░██║██║░░██║╚█████╔╝██║░░╚██╗███████╗██║░░██║██████╔╝░░░
     ╚═╝░░╚═╝╚═╝░░╚═╝░╚════╝░╚═╝░░╚═╝╚══════╝╚═╝░░╚═╝╚═════╝░░░░
 
     ░█████╗░██████╗░░█████╗░██╗░░██╗░░██╗░░░░░██╗███╗░░██╗██╗░░░██╗██╗░░██╗
@@ -37,7 +29,6 @@ greet() {
     echo -e "${RESET}\n\n"
 }
 
-# Function to ask for full disk encryption
 ask_full_disk_encryption() {
     while true; do
         read -rp "Do you want to enable full disk encryption? (y/n): " encryption_choice
@@ -49,7 +40,6 @@ ask_full_disk_encryption() {
     done
 }
 
-# Function to ask for the root password
 ask_root_password() {
     echo -e "${GREEN}[*] Setting the root password...${RESET}"
     while true; do
@@ -63,7 +53,6 @@ ask_root_password() {
     done
 }
 
-# Function to ask for the user password
 ask_user_password() {
     echo -e "${GREEN}[*] Setting the user password...${RESET}"
     while true; do
@@ -77,7 +66,6 @@ ask_user_password() {
     done
 }
 
-# Function to execute a command and handle errors
 execute_command() {
     local cmd="$1"
     local desc="$2"
@@ -94,7 +82,6 @@ execute_command() {
     fi
 }
 
-# Function to validate device path
 validate_device_path() {
     local dev_path=$1
 
@@ -112,7 +99,6 @@ validate_device_path() {
     echo "$dev_path"
 }
 
-# Function to identify the installation disk
 identify_installation_disk() {
     # Prompt user to identify the installation disk
     read -erp "Enter the device you want to install to [e.g., sda, nvme0n1]: " dev_path
@@ -132,7 +118,6 @@ identify_installation_disk() {
     echo "$dev_path"
 }
 
-# Function to securely wipe the disk
 securely_wipe_disk() {
     dev_path=$(validate_device_path "$1")
     echo -e "${GREEN}[*] Securely wiping the disk...${RESET}"
@@ -159,8 +144,7 @@ securely_wipe_disk() {
     echo -e "${GREEN}[*] Securely wiped $dev_path successfully.${RESET}"
 }
 
-# Function to partition and encrypt the disk
-partition_and_encryptpartition_and_encrypt() {
+partition_and_encrypt() {
     dev_path=$(validate_device_path "$1")
     encryption_choice=$2
 
@@ -182,33 +166,369 @@ partition_and_encryptpartition_and_encrypt() {
     fi
 }
 
-# Function to create crypttab entry
-create_crypttab_entry() {
-    echo -e "${GREEN}[*] Creating crypttab entry...${RESET}"
-    luks_partition_uuid=$(blkid -s UUID -o value "${dev_path}p2")
-    echo "cryptroot UUID=$luks_partition_uuid none luks" >> /mnt/etc/crypttab
+fill_encrypted_partition_with_random_data() {
+    echo -e "${GREEN}[*] Filling encrypted partition with random data...${RESET}"
+    if ! dd if=/dev/urandom of=/dev/mapper/cryptroot bs=10M status=progress; then
+        echo "Failed to fill encrypted partition with random data. Please check your system configuration."
+        exit 1
+    fi
+    echo -e "${GREEN}[*] Encrypted partition filled with random data successfully.${RESET}"
 }
 
-# Function to verify files
-verify_files() {
-    echo -e "${GREEN}[*] Verifying installed files...${RESET}"
-    arch-chroot /mnt pacman -Qk
+createLVM2() {
+    local dev_path=$1
+    local encryption_choice=$2
+
+    dev_path=$(validate_device_path "$dev_path")
+    local vg_name="lvmcrypt"
+    local pv_path="/dev/mapper/cryptroot"
+
+    if [ "$encryption_choice" != "y" ]; then
+        vg_name="lvmplain"
+        pv_path="${dev_path}p2"
+    fi
+
+    echo -e "${GREEN}[*] Configuring LVM...${RESET}"
+
+    pvcreate "$pv_path"
+    vgcreate "$vg_name" "$pv_path"
+    lvcreate -L 20G -n lv_root "$vg_name"
+    lvcreate -l 100%FREE -n lv_home "$vg_name"
+    lvresize -l -100%FREE "/dev/$vg_name/lv_home"
+    lvcreate -L 20G -n lv_usr "$vg_name"
+    lvcreate -L 10G -n lv_var "$vg_name"
+    lvcreate -L 4G -n lv_varlog "$vg_name"
+    lvcreate -L 2G -n lv_varlogaudit "$vg_name"
+    lvcreate -L 4G -n lv_tmp "$vg_name"
+    lvcreate -L 4G -n lv_vartmp "$vg_name"
+    lvcreate -L 8G -n lv_swap "$vg_name"
+    lvresize -l 100%FREE "/dev/$vg_name/lv_home"
 }
 
-# Function to configure networking
+formatPartitions() {
+    local encryption_choice=$1
+
+    echo -e "${GREEN}[*] Formatting partitions to Btrfs filesystem...${RESET}"
+
+    local vg_name="lvmcrypt"
+    [ "$encryption_choice" != "y" ] && vg_name="lvmplain"
+
+    mkfs.btrfs "/dev/${vg_name}/lv_root"
+    mkfs.btrfs "/dev/${vg_name}/lv_home"
+    mkfs.btrfs "/dev/${vg_name}/lv_usr"
+    mkfs.btrfs "/dev/${vg_name}/lv_var"
+    mkfs.btrfs "/dev/${vg_name}/lv_varlog"
+    mkfs.btrfs "/dev/${vg_name}/lv_varlogaudit"
+    mkfs.btrfs "/dev/${vg_name}/lv_tmp"
+    mkfs.btrfs "/dev/${vg_name}/lv_vartmp"
+    mkswap "/dev/${vg_name}/lv_swap"
+}
+
+mountFilesystems() {
+    local dev_path=$1
+    local encryption_choice=$2
+
+    dev_path=$(validate_device_path "$dev_path")
+    echo -e "${GREEN}[*] Mounting filesystems...${RESET}"
+
+    local vg_name="lvmcrypt"
+    [ "$encryption_choice" != "y" ] && vg_name="lvmplain"
+
+    mount -o noatime,compress=zstd,autodefrag "/dev/${vg_name}/lv_root" /mnt
+    mkdir -p /mnt/home /mnt/usr /mnt/var /mnt/var/log /mnt/var/log/audit /mnt/tmp /mnt/var/tmp
+    mount -o noatime,compress=zstd,autodefrag "/dev/${vg_name}/lv_home" /mnt/home
+    mount -o noatime,compress=zstd,autodefrag "/dev/${vg_name}/lv_usr" /mnt/usr
+    mount -o noatime,compress=zstd,autodefrag "/dev/${vg_name}/lv_var" /mnt/var
+    mount -o noatime "/dev/${vg_name}/lv_varlog" /mnt/var/log
+    mount -o noatime "/dev/${vg_name}/lv_varlogaudit" /mnt/var/log/audit
+    mount -o noatime "/dev/${vg_name}/lv_tmp" /mnt/tmp
+    mount -o noatime "/dev/${vg_name}/lv_vartmp" /mnt/var/tmp
+    swapon "/dev/${vg_name}/lv_swap"
+    mkdir -p /mnt/boot
+    mount "${dev_path}p1" /mnt/boot
+}
+
+add_mount_options_to_fstab() {
+    local dev_path=$1
+    local encryption_choice=$2
+
+    echo -e "${GREEN}[*] Adding mount options to /etc/fstab...${RESET}"
+
+    # Generate fstab
+    genfstab -U /mnt > /mnt/etc/fstab
+
+    # Function to update fstab with desired mount options
+    update_fstab_entry() {
+        local device="$1"
+        local mount_point="$2"
+        local options="$3"
+        
+        uuid=$(blkid -s UUID -o value "$device")
+
+        # Escape forward slashes for sed
+        uuid_escaped=$(echo "$uuid" | sed 's/\//\\\//g')
+        mount_point_escaped=$(echo "$mount_point" | sed 's/\//\\\//g')
+
+        # Update fstab entry with mount options
+        sed -i "s|^UUID=$uuid_escaped\s\+$mount_point_escaped\s\+\w\+\s\+\w\+|UUID=$uuid_escaped $mount_point btrfs $options|" /mnt/etc/fstab
+    }
+
+    local vg_name="lvmcrypt"
+    [ "$encryption_choice" != "y" ] && vg_name="lvmplain"
+
+    declare -A mount_points_options=(
+        ["/dev/${vg_name}/lv_root"]="/mnt noatime,compress=zstd,autodefrag"
+        ["/dev/${vg_name}/lv_home"]="/mnt/home noatime,compress=zstd,autodefrag"
+        ["/dev/${vg_name}/lv_usr"]="/mnt/usr noatime,compress=zstd,autodefrag"
+        ["/dev/${vg_name}/lv_var"]="/mnt/var noatime,compress=zstd,autodefrag"
+        ["/dev/${vg_name}/lv_varlog"]="/mnt/var/log noatime"
+        ["/dev/${vg_name}/lv_varlogaudit"]="/mnt/var/log/audit noatime"
+        ["/dev/${vg_name}/lv_tmp"]="/mnt/tmp noatime"
+        ["/dev/${vg_name}/lv_vartmp"]="/mnt/var/tmp noatime"
+        ["${dev_path}p1"]="/mnt/boot noatime"
+    )
+
+    if [ -e /mnt/etc/systemd/system/zramswap.service ]; then
+        echo "ZRAM is enabled, no swap entry in fstab"
+    else
+        mount_points_options["/dev/${vg_name}/lv_swap"]="none swap sw 0 0"
+        echo "Traditional swap is being used, adding swap entry to fstab"
+    fi
+
+    for device in "${!mount_points_options[@]}"; do
+        mount_point="${mount_points_options[$device]%% *}"
+        options="${mount_points_options[$device]#* }"
+        update_fstab_entry "$device" "$mount_point" "$options"
+    done
+
+    echo -e "${GREEN}[*] Mount options added to /etc/fstab successfully.${RESET}"
+}
+
+set_root_password() {
+    ask_root_password
+    echo "root:$root_password" | arch-chroot /mnt chpasswd
+}
+
+ask_username() {
+    read -p "Enter your username: " username
+    echo "$username"
+}
+
+set_user_info() {
+    local username=$1
+    ask_user_password
+    arch-chroot /mnt useradd -m -G wheel -s /bin/bash "$username"
+    echo "$username:$user_password" | arch-chroot /mnt chpasswd
+}
+
+install_software() {
+    echo -e "${GREEN}[*] Installing additional software...${RESET}"
+    arch-chroot /mnt pacman -S --noconfirm aerc alacritty alsa-utils bluez btop cmake dhcpcd dmenu fd ffmpeg ffmpegthumbnailer firefox fish flameshot git ibus iw keepassxc lm_sensors lvm2 mlocate mpd mpv ncmpcpp neofetch neovim networkmanager ntfs-3g obsidian openvpn pass pipewire pipewire-alsa pipewire-jack pipewire-pulse qbittorrent qpwgraph ranger ripgrep sddm sway systemd-resolvconf terminus-font tmux upower virtualbox w3m wildmidi yakuake
+}
+
+install_blackarch() {
+    echo -e "${GREEN}[*] Installing BlackArch tools...${RESET}"
+    arch-chroot /mnt curl -O https://blackarch.org/strap.sh
+    arch-chroot /mnt chmod +x strap.sh
+    arch-chroot /mnt ./strap.sh
+    arch-chroot /mnt pacman -Syyu --noconfirm blackarch
+}
+
+install_graphics_driver() {
+    echo -e "${GREEN}[*] Installing the graphics driver...${RESET}"
+    
+    video="unknown"
+    
+    # Check if running in a virtual machine
+    case $(dmidecode -s system-product-name) in
+        *VirtualBox*) video="virtualbox" ;;
+        *VMware*) video="vmware" ;;
+        *)
+            gpu_detected=$(lspci | grep -iE "intel|nvidia|amd")
+            if grep -qiE "intel|nvidia|amd" <<< "$gpu_detected"; then
+                echo "Detected GPU(s): $gpu_detected"
+                read -p "[?] Do you want to proceed with the installation? [Y/n]: " -r answer
+                answer=${answer:-Y}
+                [[ ! $answer =~ [Yy] ]] && echo "Aborted installation." && exit 0
+
+                video=$(grep -oi "intel\|nvidia\|amd" <<< "$gpu_detected" | paste -sd+ -)
+            else
+                read -rp "[!] What is your GPU vendor: [intel] [nvidia] [amd]: " video
+            fi
+            ;;
+    esac
+
+    # Install the appropriate drivers
+    case $video in
+        intel) packages=(xf86-video-intel mesa) ;;
+        nvidia) packages=(nvidia nvidia-settings) ;;
+        amd) packages=(xf86-video-amdgpu mesa) ;;
+        intel+nvidia) packages=(xf86-video-intel nvidia nvidia-settings) ;;
+        intel+amd) packages=(xf86-video-intel xf86-video-amdgpu mesa) ;;
+        nvidia+amd) packages=(nvidia nvidia-settings xf86-video-amdgpu mesa) ;;
+        intel+nvidia+amd) packages=(xf86-video-intel nvidia nvidia-settings xf86-video-amdgpu mesa) ;;
+        virtualbox) packages=(virtualbox-guest-utils) ;;
+        vmware) packages=(xf86-video-vmware mesa) ;;
+        *) log "Invalid GPU selection" && echo "Invalid GPU selection." && exit 1 ;;
+    esac
+
+    arch-chroot /mnt pacman -S "${packages[@]}" --noconfirm
+}
+
 configure_networking() {
-    echo -e "${GREEN}[*] Configuring networking...${RESET}"
-    arch-chroot /mnt systemctl enable NetworkManager
+    arch-chroot /mnt bash -c "
+        pacman -S --noconfirm iptables && \
+        systemctl enable iptables.service && \
+        iptables -P INPUT DROP && \
+        iptables -P FORWARD DROP && \
+        iptables -P OUTPUT ACCEPT && \
+        iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT && \
+        iptables -A OUTPUT -m state --state ESTABLISHED,RELATED -j ACCEPT && \
+        iptables -A INPUT -p icmp --icmp-type echo-request -j ACCEPT && \
+        iptables-save > /etc/iptables/iptables.rules && \
+        systemctl enable dhcpcd.service && \
+        systemctl enable iwd.service && \
+        systemctl enable systemd-resolved.service
+    "
 }
 
-# Function to safely unmount devices
 safely_unmount_devices() {
     echo -e "${GREEN}[*] Safely unmounting devices...${RESET}"
     umount -R /mnt
     swapoff -a
+    if [ "$encryption_choice" == "y" ]; then
+        cryptsetup close cryptroot
+    fi
 }
 
-# Main function
+generate_initramfs() {
+    echo -e "${GREEN}[*] Generating initramfs...${RESET}"
+    hooks="base udev autodetect modconf kms block encrypt lvm2 btrfs keyboard fsck"
+    [ -f /mnt/etc/systemd/system/zramswap.service ] && hooks="$hooks zram"
+    arch-chroot /mnt bash -c "sed -i 's/^HOOKS=.*/HOOKS=($hooks)/' /etc/mkinitcpio.conf && mkinitcpio -P"
+}
+
+create_crypttab_entry() {
+    if uuid=$(blkid -s UUID -o value /dev/mapper/cryptroot); then
+        echo "cryptroot   UUID=$uuid   none   luks" | tee /mnt/etc/crypttab > /dev/null
+    else
+        echo "Failed to retrieve UUID for /dev/mapper/cryptroot."
+    fi
+}
+
+verify_files() {
+    echo -e "${GREEN}[*] Verifying files and configurations...${RESET}"
+
+    # List of files to check
+    files=(
+        "/mnt/boot/grub/grub.cfg"
+        "/mnt/boot/initramfs-linux.img"
+        "/mnt/etc/fstab"
+    )
+
+    # Check each file
+    for file in "${files[@]}"; do
+        [[ ! -f "$file" ]] && echo "$file not found. Please check your system configuration." && exit 1
+    done
+    echo "All necessary files are present and correct."
+}
+
+configure_dynamic_zram() {
+    encryption_choice=$1
+    echo -e "${GREEN}[*] Configuring dynamic ZRAM...${RESET}"
+
+    # Explain ZRAM benefits and drawbacks
+    echo -e "${YELLOW}[*] Why Enable ZRAM:${RESET}\n- Improved Performance: Faster swap operations using compressed RAM instead of disk-based swap.\n- Reduced I/O Overhead: Reduces load on disk I/O, enhancing system performance.\n- Memory Efficiency: Compresses data, allowing more effective use of RAM."
+    echo -e "${RED}[*] Why Not Enable ZRAM:${RESET}\n- Sufficient RAM: If you have plenty of RAM and don't use swap often, ZRAM may not provide significant benefits.\n- System Overhead: Compression and decompression operations may introduce slight CPU overhead."
+
+    # Prompt user to enable ZRAM
+    read -rp "Do you want to enable ZRAM to replace swap? (yes/no): " user_input
+    [[ "$user_input" != "yes" ]] && echo -e "${RED}[*] ZRAM configuration aborted by user.${RESET}" && return
+
+    echo -e "${GREEN}[*] Installing and configuring ZRAM...${RESET}"
+    pacstrap /mnt zram-generator || { echo "Error: Failed to install zram-generator." >&2; exit 1; }
+
+    # Create ZRAM config file
+    cat <<EOF > /mnt/etc/systemd/zram-generator.conf
+[zram0]
+zram-size = min(ram / 2, 8192)
+compression-algorithm = zstd
+swap-priority = 100
+fs-type = swap
+EOF
+
+    arch-chroot /mnt systemctl enable /usr/lib/systemd/systemd-zram-setup@zram0.service || { echo "Error: Failed to enable zram service." >&2; exit 1; }
+    arch-chroot /mnt systemctl start systemd-zram-setup@zram0.service || { echo "Error: Failed to start zram service." >&2; exit 1; }
+    arch-chroot /mnt swapon --show
+    echo "Zram setup with zram-generator complete."
+
+    # Create sysctl config for ZRAM optimization
+    cat <<EOF > /mnt/etc/sysctl.d/99-vm-zram-parameters.conf
+vm.swappiness = 180
+vm.watermark_boost_factor = 0
+vm.watermark_scale_factor = 125
+vm.page-cluster = 0
+EOF
+    arch-chroot /mnt sysctl --system
+
+    # Disable all swap and adjust logical volumes based on encryption choice
+swapoff -a
+if [ "$encryption_choice" == "y" ]; then
+    if ! lvremove -y /dev/lvmcrypt/lv_swap; then
+        echo "Error: Failed to remove swap logical volume." >&2
+        exit 1
+    fi
+    if ! lvextend -l +100%FREE /dev/lvmcrypt/lv_home; then
+        echo "Error: Failed to extend home logical volume." >&2
+        exit 1
+    fi
+    if ! resize2fs /dev/lvmcrypt/lv_home; then
+        echo "Error: Failed to resize home logical volume." >&2
+        exit 1
+    fi
+else
+    if ! lvremove -y /dev/lvmplain/lv_swap; then
+        echo "Error: Failed to remove swap logical volume." >&2
+        exit 1
+    fi
+    if ! lvextend -l +100%FREE /dev/lvmplain/lv_home; then
+        echo "Error: Failed to extend home logical volume." >&2
+        exit 1
+    fi
+    if ! resize2fs /dev/lvmplain/lv_home; then
+        echo "Error: Failed to resize home logical volume." >&2
+        exit 1
+    fi
+fi
+
+    log "ZRAM configured successfully, swap removed, home LV expanded, and zramswap service created"
+    echo -e "${GREEN}[*] ZRAM configured, swap removed, home LV expanded, and zramswap service created.${RESET}"
+}
+
+installer() {
+    echo -e "${GREEN}[*] Running installer...${RESET}"
+    pacstrap /mnt base linux linux-firmware vim intel-ucode btrfs-progs sudo dhcpcd vi iwd  --noconfirm
+}
+
+install_bootloader() {
+    local dev_path=$1
+    local encryption_choice=$2
+
+    echo -e "${GREEN}[*] Installing bootloader...${RESET}"
+    arch-chroot /mnt pacman -S grub efibootmgr --noconfirm
+
+    if [ "$encryption_choice" == "y" ]; then
+        luks_partition_uuid=$(blkid -s UUID -o value "${dev_path}p2")
+        arch-chroot /mnt bash -c "echo 'GRUB_CMDLINE_LINUX=\"cryptdevice=UUID=$luks_partition_uuid:cryptroot root=/dev/mapper/lv_root\"' >> /etc/default/grub"
+    else
+        root_partition_uuid=$(blkid -s UUID -o value "${dev_path}p2")
+        arch-chroot /mnt bash -c "echo 'GRUB_CMDLINE_LINUX=\"root=UUID=$root_partition_uuid\"' >> /etc/default/grub"
+    fi
+
+    execute_command "arch-chroot /mnt grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB" "install GRUB"
+    execute_command "arch-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg" "generate GRUB configuration"
+}
+
 main() {
     greet
     check_root
@@ -256,3 +576,4 @@ main() {
 }
 
 main
+
