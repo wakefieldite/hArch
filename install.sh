@@ -150,9 +150,10 @@ securely_wipe_disk() {
 }
 
 partition_and_encrypt() {
-    dev_path=$(validate_device_path "$1")
-    encryption_choice=$2
+    local dev_path=$1
+    local encryption_choice=$2
 
+    dev_path=$(validate_device_path "$dev_path")
     echo -e "${GREEN}[*] Creating boot partition...${RESET}"
 
     # Create partitions and format ESP
