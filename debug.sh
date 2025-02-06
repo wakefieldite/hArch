@@ -115,15 +115,12 @@ partition_and_encrypt() {
     local encryption_choice=$1
 
     echo -e "${GREEN}[*] Creating boot partition...${RESET}"
-
-    # Debugging: Print the value of dev_path before the execute_command call
     echo -e "${YELLOW}[DEBUG] dev_path before partitioning: $dev_path${RESET}"
 
     # Create partitions and format ESP
     execute_command "parted --script $dev_path mklabel gpt mkpart ESP fat32 1MiB 512MiB set 1 boot on mkpart primary 512MiB 100%" "create partitions on $dev_path"
     read -rp "Press any key to continue..."
 
-    # Debugging: Print the value of dev_path after the execute_command call
     echo -e "${YELLOW}[DEBUG] dev_path after partitioning: $dev_path${RESET}"
 
     execute_command "mkfs.fat -F32 ${dev_path}p1" "format the ESP partition"
@@ -137,7 +134,6 @@ partition_and_encrypt() {
         echo -e "${GREEN}[*] Opening LUKS container on ${dev_path}p2 as cryptroot...${RESET}"
         cryptsetup open --type luks "${dev_path}p2" cryptroot
 
-        # Verify device mapping for encryption
         execute_command "cryptsetup status cryptroot" "verify the device mapping for encryption"
         read -rp "Press any key to continue..."
     fi
@@ -175,34 +171,68 @@ fill_encrypted_partition_with_random_data() {
         exit 1
     fi
     echo -e "${GREEN}[*] Encrypted partition filled with random data successfully.${RESET}"
+    read -rp "Press any key to continue..."
 }
 
 createLVM2() {
     local dev_path=$1
     local encryption_choice=$2
 
-    dev_path=$(validate_device_path "$dev_path")
+    echo -e "${GREEN}[*] Configuring LVM...${RESET}"
+
     local pv_path="/dev/mapper/cryptroot"
 
     if [ "$encryption_choice" != "y" ]; then
         pv_path="${dev_path}p2"
     fi
 
-    echo -e "${GREEN}[*] Configuring LVM...${RESET}"
-
+    echo -e "${GREEN}[*] Creating physical volume...${RESET}"
     pvcreate "$pv_path"
+    read -rp "Press any key to continue..."
+
+    echo -e "${GREEN}[*] Creating volume group...${RESET}"
     vgcreate "vg0" "$pv_path"
+    read -rp "Press any key to continue..."
+
+    echo -e "${GREEN}[*] Creating logical volume for root...${RESET}"
     lvcreate -L 20G -n lv_root "vg0"
+    read -rp "Press any key to continue..."
+
+    echo -e "${GREEN}[*] Creating logical volume for home...${RESET}"
     lvcreate -l 100%FREE -n lv_home "vg0"
-    lvresize -l -100%FREE "/dev/vg0/lv_home"
+    read -rp "Press any key to continue..."
+
+    echo -e "${GREEN}[*] Creating logical volume for usr...${RESET}"
     lvcreate -L 20G -n lv_usr "vg0"
+    read -rp "Press any key to continue..."
+
+    echo -e "${GREEN}[*] Creating logical volume for var...${RESET}"
     lvcreate -L 10G -n lv_var "vg0"
+    read -rp "Press any key to continue..."
+
+    echo -e "${GREEN}[*] Creating logical volume for varlog...${RESET}"
     lvcreate -L 4G -n lv_varlog "vg0"
+    read -rp "Press any key to continue..."
+
+    echo -e "${GREEN}[*] Creating logical volume for varlogaudit...${RESET}"
     lvcreate -L 2G -n lv_varlogaudit "vg0"
+    read -rp "Press any key to continue..."
+
+    echo -e "${GREEN}[*] Creating logical volume for tmp...${RESET}"
     lvcreate -L 4G -n lv_tmp "vg0"
+    read -rp "Press any key to continue..."
+
+    echo -e "${GREEN}[*] Creating logical volume for vartmp...${RESET}"
     lvcreate -L 4G -n lv_vartmp "vg0"
+    read -rp "Press any key to continue..."
+
+    echo -e "${GREEN}[*] Creating logical volume for swap...${RESET}"
     lvcreate -L 8G -n lv_swap "vg0"
+    read -rp "Press any key to continue..."
+
+    echo -e "${GREEN}[*] Resizing home logical volume...${RESET}"
     lvresize -l 100%FREE "/dev/vg0/lv_home"
+    read -rp "Press any key to continue..."
 }
 
 formatPartitions() {
@@ -210,37 +240,99 @@ formatPartitions() {
 
     echo -e "${GREEN}[*] Formatting partitions to Btrfs filesystem...${RESET}"
 
+    echo -e "${GREEN}[*] Formatting root partition...${RESET}"
     mkfs.btrfs "/dev/vg0/lv_root"
+    read -rp "Press any key to continue..."
+
+    echo -e "${GREEN}[*] Formatting home partition...${RESET}"
     mkfs.btrfs "/dev/vg0/lv_home"
+    read -rp "Press any key to continue..."
+
+    echo -e "${GREEN}[*] Formatting usr partition...${RESET}"
     mkfs.btrfs "/dev/vg0/lv_usr"
+    read -rp "Press any key to continue..."
+
+    echo -e "${GREEN}[*] Formatting var partition...${RESET}"
     mkfs.btrfs "/dev/vg0/lv_var"
+    read -rp "Press any key to continue..."
+
+    echo -e "${GREEN}[*] Formatting varlog partition...${RESET}"
     mkfs.btrfs "/dev/vg0/lv_varlog"
+    read -rp "Press any key to continue..."
+
+    echo -e "${GREEN}[*] Formatting varlogaudit partition...${RESET}"
     mkfs.btrfs "/dev/vg0/lv_varlogaudit"
+    read -rp "Press any key to continue..."
+
+    echo -e "${GREEN}[*] Formatting tmp partition...${RESET}"
     mkfs.btrfs "/dev/vg0/lv_tmp"
+    read -rp "Press any key to continue..."
+
+    echo -e "${GREEN}[*] Formatting vartmp partition...${RESET}"
     mkfs.btrfs "/dev/vg0/lv_vartmp"
+    read -rp "Press any key to continue..."
+
+    echo -e "${GREEN}[*] Formatting swap partition...${RESET}"
     mkswap "/dev/vg0/lv_swap"
+    read -rp "Press any key to continue..."
 }
+
+
 
 mountFilesystems() {
-    local dev_path=$1
-    local encryption_choice=$2
+    local encryption_choice=$1
 
-    dev_path=$(validate_device_path "$dev_path")
     echo -e "${GREEN}[*] Mounting filesystems...${RESET}"
 
+    echo -e "${GREEN}[*] Mounting root filesystem...${RESET}"
     mount -o noatime,compress=zstd,autodefrag "/dev/vg0/lv_root" /mnt
-    mkdir -p /mnt/home /mnt/usr /mnt/var /mnt/var/log /mnt/var/log/audit /mnt/tmp /mnt/var/tmp
+    read -rp "Press any key to continue..."
+
+    echo -e "${GREEN}[*] Creating and mounting home directory...${RESET}"
+    mkdir -p /mnt/home
     mount -o noatime,compress=zstd,autodefrag "/dev/vg0/lv_home" /mnt/home
+    read -rp "Press any key to continue..."
+
+    echo -e "${GREEN}[*] Creating and mounting usr directory...${RESET}"
+    mkdir -p /mnt/usr
     mount -o noatime,compress=zstd,autodefrag "/dev/vg0/lv_usr" /mnt/usr
+    read -rp "Press any key to continue..."
+
+    echo -e "${GREEN}[*] Creating and mounting var directory...${RESET}"
+    mkdir -p /mnt/var
     mount -o noatime,compress=zstd,autodefrag "/dev/vg0/lv_var" /mnt/var
+    read -rp "Press any key to continue..."
+
+    echo -e "${GREEN}[*] Creating and mounting varlog directory...${RESET}"
+    mkdir -p /mnt/var/log
     mount -o noatime "/dev/vg0/lv_varlog" /mnt/var/log
+    read -rp "Press any key to continue..."
+
+    echo -e "${GREEN}[*] Creating and mounting varlogaudit directory...${RESET}"
+    mkdir -p /mnt/var/log/audit
     mount -o noatime "/dev/vg0/lv_varlogaudit" /mnt/var/log/audit
+    read -rp "Press any key to continue..."
+
+    echo -e "${GREEN}[*] Creating and mounting tmp directory...${RESET}"
+    mkdir -p /mnt/tmp
     mount -o noatime "/dev/vg0/lv_tmp" /mnt/tmp
+    read -rp "Press any key to continue..."
+
+    echo -e "${GREEN}[*] Creating and mounting vartmp directory...${RESET}"
+    mkdir -p /mnt/var/tmp
     mount -o noatime "/dev/vg0/lv_vartmp" /mnt/var/tmp
+    read -rp "Press any key to continue..."
+
+    echo -e "${GREEN}[*] Enabling swap...${RESET}"
     swapon "/dev/vg0/lv_swap"
+    read -rp "Press any key to continue..."
+
+    echo -e "${GREEN}[*] Creating and mounting boot directory...${RESET}"
     mkdir -p /mnt/boot
     mount "${dev_path}p1" /mnt/boot
+    read -rp "Press any key to continue..."
 }
+
 
 add_mount_options_to_fstab() {
     local dev_path=$1
@@ -532,6 +624,7 @@ main() {
 
     if [ "$encryption_choice" == "y" ]; then
         securely_wipe_disk
+        read -rp "Press any key to continue..."
     fi
 
     partition_and_encrypt "$encryption_choice"
@@ -541,6 +634,7 @@ main() {
         if [ "$fill_choice" == "y" ]; then
             fill_encrypted_partition_with_random_data
         fi
+        read -rp "Press any key to continue..."
     fi
 
     createLVM2 "$dev_path" "$encryption_choice"
