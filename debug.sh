@@ -493,7 +493,7 @@ safely_unmount_devices() {
 generate_initramfs() {
     echo -e "${GREEN}[*] Generating initramfs...${RESET}"
     hooks="base udev autodetect modconf kms block encrypt lvm2 btrfs keyboard fsck"
-    [ -f /mnt/etc/systemd/system/zramswap.service ] && hooks="$hooks zram"
+    [ -f /mnt/etc/systemd/zram-generator.conf ] && hooks="$hooks zram"
     arch-chroot /mnt bash -c "sed -i 's/^HOOKS=.*/HOOKS=($hooks)/' /etc/mkinitcpio.conf && mkinitcpio -P"
 }
 
