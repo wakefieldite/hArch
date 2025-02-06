@@ -495,9 +495,9 @@ generate_initramfs() {
     echo -e "${GREEN}[*] Generating initramfs...${RESET}"
 
     if [ "$encryption_choice" == "y" ]; then
-        hooks="base udev autodetect modconf kms block encrypt lvm2 btrfs keyboard fsck"
+        hooks="base udev autodetect modconf kms block encrypt lvm2 btrfs usr filesystems keyboard fsck"
     else
-        hooks="base udev autodetect modconf kms block lvm2 btrfs keyboard fsck"
+        hooks="base udev autodetect modconf kms block lvm2 btrfs usr filesystems keyboard fsck"
     fi
 
     arch-chroot /mnt bash -c "sed -i 's/^HOOKS=.*/HOOKS=($hooks)/' /etc/mkinitcpio.conf && mkinitcpio -P"
