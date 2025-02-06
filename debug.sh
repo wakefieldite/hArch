@@ -570,13 +570,10 @@ EOF
         echo "Error: Failed to extend home logical volume." >&2
         exit 1
     fi
-    if ! btrfs filesystem resize max /dev/vg0/lv_home; then
-        echo "Error: Failed to resize home logical volume." >&2
-        exit 1
-    fi
     
     mount /dev/vg0/lv_home /mnt/home || { echo "Error: Failed to mount home logical volume." >&2; exit 1; }
-    
+    btrfs filesystem resize max /mnt/home || { echo "Error: Failed to resize home Btrfs filesystem." >&2; exit 1; }
+
     log "ZRAM configured successfully, swap removed, home LV expanded, and zramswap service created"
     echo -e "${GREEN}[*] ZRAM configured, swap removed, home LV expanded, and zramswap service created.${RESET}"
 }
