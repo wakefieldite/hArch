@@ -601,18 +601,10 @@ install_bootloader() {
     if [ "$encryption_choice" == "y" ]; then
         luks_partition_uuid=$(blkid -s UUID -o value "${dev_path}p2")
         root_partition_uuid=$(blkid -s UUID -o value "/dev/vg0/lv_root")
-        arch-chroot /mnt bash -c "echo 'GRUB_CMDLINE_LINUX_DEFAULT=\"quiet splash cryptdevice=UUID=$luks_partition_uuid:cryptroot root=$root_partition_uuid\"' >> /etc/default/grub && update-grub"
+        arch-chroot /mnt bash -c "echo 'GRUB_CMDLINE_LINUX_DEFAULT=\"quiet splash cryptdevice=UUID=$luks_partition_uuid:cryptroot root=$root_partition_uuid\"' >> /etc/default/grub"
     else
         root_partition_uuid=$(blkid -s UUID -o value "/dev/vg0/lv_root")
-        arch-chroot /mnt bash -c "echo 'GRUB_CMDLINE_LINUX_DEFAULT=\"root=UUID=$root_partition_uuid\"' >> /etc/default/grub && update-grub"
-    fi
-
-    # Generate the GRUB configuration
-    echo -e "${GREEN}[*] Generating GRUB configuration...${RESET}"
-    arch-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg
-    if [ $? -ne 0 ]; then
-        echo -e "${RED}[ERROR] Failed to generate GRUB configuration.${RESET}"
-        exit 1
+        arch-chroot /mnt bash -c "echo 'GRUB_CMDLINE_LINUX_DEFAULT=\"root=UUID=$root_partition_uuid\"' >> /etc/default/grub"
     fi
 
     # Install the GRUB bootloader
@@ -623,6 +615,14 @@ install_bootloader() {
         exit 1
     fi
 
+    # Generate the GRUB configuration
+    echo -e "${GREEN}[*] Generating GRUB configuration...${RESET}"
+    arch-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg
+    if [ $? -ne 0 ]; then
+        echo -e "${RED}[ERROR] Failed to generate GRUB configuration.${RESET}"
+        exit 1
+    fi
+    
     # Regenerate the initramfs
     echo -e "${GREEN}[*] Regenerating initramfs...${RESET}"
     arch-chroot /mnt mkinitcpio -P
