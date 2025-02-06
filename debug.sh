@@ -191,7 +191,7 @@ createLVM2() {
     read -rp "Press any key to continue..."
 
     echo -e "${GREEN}[*] Creating volume group...${RESET}"
-    vgcreate "vg0" "$pv_path"
+    vgcreate -ff "vg0" "$pv_path"
     read -rp "Press any key to continue..."
 
     echo -e "${GREEN}[*] Creating logical volume for root...${RESET}"
