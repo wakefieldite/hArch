@@ -8,6 +8,7 @@ BLUE='\033[0;34m'
 PURPLE='\033[0;35m'
 CYAN='\033[0;36m'
 RESET='\033[0m'
+declare -g dev_path
 
 check_root() {
     [[ $EUID -ne 0 ]] && echo "Please run the script as root." && exit 1
@@ -96,6 +97,9 @@ identify_installation_disk() {
         exit 1
     fi
 
+    # Debugging: Show the selected device path
+    echo "[DEBUG] Selected device path: $dev_path"
+
     # Display selected device information with partitions
     echo "[!] You have selected $dev_path for installation. Please make sure this is the correct drive."
 
@@ -105,13 +109,10 @@ identify_installation_disk() {
         echo "Installation disk selection canceled."
         exit 1
     fi
-
-    echo "$dev_path"
 }
 
 partition_and_encrypt() {
-    local dev_path=$1
-    local encryption_choice=$2
+    local encryption_choice=$1
 
     echo -e "${GREEN}[*] Creating boot partition...${RESET}"
 
@@ -143,7 +144,6 @@ partition_and_encrypt() {
 }
 
 securely_wipe_disk() {
-    local dev_path=$1
     echo -e "${GREEN}[*] Securely wiping the disk...${RESET}"
 
     # Check if the device is an NVMe drive
@@ -528,13 +528,13 @@ main() {
     check_root
     encryption_choice=$(ask_full_disk_encryption)
     lsblk -o NAME,SIZE,TYPE,MOUNTPOINT,FSTYPE,LABEL | grep -E 'disk|part'
-    dev_path=$(identify_installation_disk)
+    identify_installation_disk
 
     if [ "$encryption_choice" == "y" ]; then
-        securely_wipe_disk "$dev_path"
+        securely_wipe_disk
     fi
 
-    partition_and_encrypt "$dev_path" "$encryption_choice"
+    partition_and_encrypt "$encryption_choice"
 
     if [ "$encryption_choice" == "y" ]; then
         read -rp "Do you want to fill the disk with random data before creating logical volumes? (y/n): " fill_choice
