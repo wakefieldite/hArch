@@ -63,11 +63,6 @@ execute_command() {
 validate_device_path() {
     local dev_path=$1
 
-    # Set default value if dev_path is empty
-    if [[ -z "$dev_path" ]]; then
-        dev_path="/dev/nvme0n1"
-    fi
-
     # Ensure the device path includes /dev/
     if [[ ! "$dev_path" =~ ^/dev/ ]]; then
         dev_path="/dev/$dev_path"
@@ -96,7 +91,8 @@ identify_installation_disk() {
         dev_path="/dev/$dev_path"
     fi
 
-    # Display selected device information with partitions
+    # Validate device path
+    dev_path=$(validate_device_path "$dev_path")
     echo "[!] You have selected $dev_path for installation. Please make sure this is the correct drive."
     
     # Confirm user's choice
@@ -106,10 +102,40 @@ identify_installation_disk() {
         exit 1
     fi
 
-    # Validate device path
-    dev_path=$(validate_device_path "$dev_path")
+    echo "[DEBUG] Validated device path: $dev_path"
 
     echo "$dev_path"
+}
+
+partition_and_encrypt() {
+    local dev_path=$1
+    local encryption_choice=$2
+
+    # Ensure the device path is validated and correctly set
+    dev_path=$(validate_device_path "$dev_path")
+    echo -e "${GREEN}[*] Creating boot partition...${RESET}"
+
+    # Debugging: Print the value of dev_path before the execute_command call
+    echo -e "${YELLOW}[DEBUG] dev_path before partitioning: $dev_path${RESET}"
+
+    # Create partitions and format ESP
+    execute_command "parted --script $dev_path mklabel gpt mkpart ESP fat32 1MiB 512MiB set 1 boot on mkpart primary 512MiB 100%" "create partitions on $dev_path"
+
+    # Debugging: Print the value of dev_path after the execute_command call
+    echo -e "${YELLOW}[DEBUG] dev_path after partitioning: $dev_path${RESET}"
+
+    execute_command "mkfs.fat -F32 ${dev_path}p1" "format the ESP partition"
+
+    if [ "$encryption_choice" == "y" ]; then
+        echo -e "${GREEN}[*] Creating LUKS container on ${dev_path}p2...${RESET}"
+        cryptsetup luksFormat --type luks2 --hash sha512 --key-size 512 --iter-time 5000 --pbkdf argon2id --cipher aes-xts-plain64 --sector-size 4096 "${dev_path}p2"
+
+        echo -e "${GREEN}[*] Opening LUKS container on ${dev_path}p2 as cryptroot...${RESET}"
+        cryptsetup open --type luks "${dev_path}p2" cryptroot
+
+        # Verify device mapping for encryption
+        execute_command "cryptsetup status cryptroot" "verify the device mapping for encryption"
+    fi
 }
 
 securely_wipe_disk() {
@@ -140,36 +166,6 @@ securely_wipe_disk() {
         echo -e "${GREEN}[*] Securely wiped $dev_path successfully.${RESET}"
     else
         echo "Device $dev_path is not an NVMe or SSD drive, skipping secure erase"
-    fi
-}
-
-partition_and_encrypt() {
-    local dev_path=$1
-    local encryption_choice=$2
-
-    dev_path=$(validate_device_path "$dev_path")
-    echo -e "${GREEN}[*] Creating boot partition...${RESET}"
-
-    # Debugging: Print the value of dev_path before the execute_command call
-    echo -e "${YELLOW}Debug: dev_path before partitioning: $dev_path${RESET}"
-
-    # Create partitions and format ESP
-    execute_command "parted --script $dev_path mklabel gpt mkpart ESP fat32 1MiB 512MiB set 1 boot on mkpart primary 512MiB 100%" "create partitions on $dev_path"
-
-    # Debugging: Print the value of dev_path after the execute_command call
-    echo -e "${YELLOW}Debug: dev_path after partitioning: $dev_path${RESET}"
-
-    execute_command "mkfs.fat -F32 ${dev_path}p1" "format the ESP partition"
-
-    if [ "$encryption_choice" == "y" ]; then
-        echo -e "${GREEN}[*] Creating LUKS container on ${dev_path}p2...${RESET}"
-        cryptsetup luksFormat --type luks2 --hash sha512 --key-size 512 --iter-time 5000 --pbkdf argon2id --cipher aes-xts-plain64 --sector-size 4096 "${dev_path}p2"
-
-        echo -e "${GREEN}[*] Opening LUKS container on ${dev_path}p2 as cryptroot...${RESET}"
-        cryptsetup open --type luks "${dev_path}p2" cryptroot
-
-        # Verify device mapping for encryption
-        execute_command "cryptsetup status cryptroot" "verify the device mapping for encryption"
     fi
 }
 
@@ -535,11 +531,20 @@ main() {
     lsblk -o NAME,SIZE,TYPE,MOUNTPOINT,FSTYPE,LABEL | grep -E 'disk|part'
     dev_path=$(identify_installation_disk)
 
+    # Debugging: Print the value of dev_path after identifying the installation disk
+    echo -e "${YELLOW}[DEBUG] dev_path after identifying installation disk: $dev_path${RESET}"
+
     if [ "$encryption_choice" == "y" ]; then
         securely_wipe_disk "$dev_path"
     fi
 
+    # Debugging: Print the value of dev_path after securely wiping the disk
+    echo -e "${YELLOW}[DEBUG] dev_path after securely wiping disk: $dev_path${RESET}"
+
     partition_and_encrypt "$dev_path" "$encryption_choice"
+
+    # Debugging: Print the value of dev_path after partitioning and encryption
+    echo -e "${YELLOW}[DEBUG] dev_path after partitioning and encryption: $dev_path${RESET}"
 
     if [ "$encryption_choice" == "y" ]; then
         read -rp "Do you want to fill the disk with random data before creating logical volumes? (y/n): " fill_choice
@@ -555,7 +560,8 @@ main() {
     configure_dynamic_zram "$encryption_choice"
     add_mount_options_to_fstab "$dev_path" "$encryption_choice"
     set_root_password
-    set_user_info
+    username=$(ask_username)
+    set_user_info "$username"
     install_software
     install_blackarch
     install_graphics_driver
