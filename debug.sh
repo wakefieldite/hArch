@@ -600,10 +600,10 @@ install_bootloader() {
     # Set the GRUB_CMDLINE_LINUX based on the encryption choice
     if [ "$encryption_choice" == "y" ]; then
         luks_partition_uuid=$(blkid -s UUID -o value "${dev_path}p2")
-        arch-chroot /mnt bash -c "sed -i 's|^GRUB_CMDLINE_LINUX=.*|GRUB_CMDLINE_LINUX=\"cryptdevice=UUID=$luks_partition_uuid:cryptroot root=/dev/mapper/cryptroot\"|' /etc/default/grub"
+        arch-chroot /mnt bash -c "echo 'GRUB_CMDLINE_LINUX_DEFAULT=\"quiet splash cryptdevice=UUID=$luks_partition_uuid:cryptroot root=/dev/mapper/vg0-lv_root\"' >> /etc/default/grub && update-grub"
     else
         root_partition_uuid=$(blkid -s UUID -o value "/dev/vg0/lv_root")
-        arch-chroot /mnt bash -c "echo 'GRUB_CMDLINE_LINUX_DEFAULT=\"root=UUID=$root_partition_uuid\"' >> /etc/default/grub && update-grub"
+        arch-chroot /mnt bash -c "echo 'GRUB_CMDLINE_LINUX_DEFAULT=\"root=UUID=/dev/mapper/vg0-lv_root\"' >> /etc/default/grub && update-grub"
     fi
 
     # Generate the GRUB configuration
