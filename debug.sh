@@ -58,7 +58,7 @@ execute_command() {
             exit 1
         fi
     fi
-    
+
     read -rp "Press any key to continue..."
 }
 
@@ -91,7 +91,10 @@ identify_installation_disk() {
     fi
 
     # Validate device path
-    dev_path=$(validate_device_path "$dev_path")
+    if [[ ! -b "$dev_path" ]]; then
+        echo "Invalid device path: $dev_path. Please provide a valid SSD device path."
+        exit 1
+    fi
 
     # Display selected device information with partitions
     echo "[!] You have selected $dev_path for installation. Please make sure this is the correct drive."
@@ -110,7 +113,6 @@ partition_and_encrypt() {
     local dev_path=$1
     local encryption_choice=$2
 
-    dev_path=$(validate_device_path "$dev_path")
     echo -e "${GREEN}[*] Creating boot partition...${RESET}"
 
     # Debugging: Print the value of dev_path before the execute_command call
@@ -118,20 +120,17 @@ partition_and_encrypt() {
 
     # Create partitions and format ESP
     execute_command "parted --script $dev_path mklabel gpt mkpart ESP fat32 1MiB 512MiB set 1 boot on mkpart primary 512MiB 100%" "create partitions on $dev_path"
-
     read -rp "Press any key to continue..."
 
     # Debugging: Print the value of dev_path after the execute_command call
     echo -e "${YELLOW}[DEBUG] dev_path after partitioning: $dev_path${RESET}"
 
     execute_command "mkfs.fat -F32 ${dev_path}p1" "format the ESP partition"
-
     read -rp "Press any key to continue..."
 
     if [ "$encryption_choice" == "y" ]; then
         echo -e "${GREEN}[*] Creating LUKS container on ${dev_path}p2...${RESET}"
         cryptsetup luksFormat --type luks2 --hash sha512 --key-size 512 --iter-time 5000 --pbkdf argon2id --cipher aes-xts-plain64 --sector-size 4096 "${dev_path}p2"
-
         read -rp "Press any key to continue..."
 
         echo -e "${GREEN}[*] Opening LUKS container on ${dev_path}p2 as cryptroot...${RESET}"
@@ -139,12 +138,12 @@ partition_and_encrypt() {
 
         # Verify device mapping for encryption
         execute_command "cryptsetup status cryptroot" "verify the device mapping for encryption"
-
         read -rp "Press any key to continue..."
     fi
 }
 
 securely_wipe_disk() {
+    local dev_path=$1
     echo -e "${GREEN}[*] Securely wiping the disk...${RESET}"
 
     # Check if the device is an NVMe drive
