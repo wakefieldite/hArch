@@ -597,16 +597,23 @@ install_bootloader() {
     echo -e "${GREEN}[*] Installing bootloader...${RESET}"
     arch-chroot /mnt pacman -S grub efibootmgr --noconfirm
 
+    # Set the GRUB_CMDLINE_LINUX based on the encryption choice
     if [ "$encryption_choice" == "y" ]; then
         luks_partition_uuid=$(blkid -s UUID -o value "${dev_path}p2")
-        arch-chroot /mnt bash -c "sed -i 's/^GRUB_CMDLINE_LINUX=.*/GRUB_CMDLINE_LINUX=\"cryptdevice=UUID=$luks_partition_uuid:cryptroot root=/dev/mapper/lv_root\"/' /etc/default/grub"
+        arch-chroot /mnt bash -c "sed -i 's|^GRUB_CMDLINE_LINUX=.*|GRUB_CMDLINE_LINUX=\"cryptdevice=UUID=$luks_partition_uuid:cryptroot root=/dev/mapper/cryptroot\"|' /etc/default/grub"
     else
         root_partition_uuid=$(blkid -s UUID -o value "/dev/vg0/lv_root")
-        arch-chroot /mnt bash -c "sed -i 's/^GRUB_CMDLINE_LINUX=.*/GRUB_CMDLINE_LINUX=\"root=UUID=$root_partition_uuid\"/' /etc/default/grub"
+        arch-chroot /mnt bash -c "sed -i 's|^GRUB_CMDLINE_LINUX=.*|GRUB_CMDLINE_LINUX=\"root=UUID=$root_partition_uuid\"|' /etc/default/grub"
     fi
 
-    execute_command "arch-chroot /mnt grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB" "install GRUB"
-    execute_command "arch-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg" "generate GRUB configuration"
+    # Generate the GRUB configuration
+    arch-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg
+
+    # Install the GRUB bootloader
+    arch-chroot /mnt grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB
+
+    # Regenerate the initramfs
+    arch-chroot /mnt mkinitcpio -P
 }
 
 installer() {
