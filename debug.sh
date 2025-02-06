@@ -561,34 +561,22 @@ EOF
 
     # Disable all swap and adjust logical volumes based on encryption choice
     swapoff -a
-    if [ "$encryption_choice" == "y" ]; then
-        if ! lvremove -y /dev/vg0/lv_swap; then
-            echo "Error: Failed to remove swap logical volume." >&2
-            exit 1
-        fi
-        if ! lvextend -l +100%FREE /dev/vg0/lv_home; then
-            echo "Error: Failed to extend home logical volume." >&2
-            exit 1
-        fi
-        if ! resize2fs /dev/vg0/lv_home; then
-            echo "Error: Failed to resize home logical volume." >&2
-            exit 1
-        fi
-    else
-        if ! lvremove -y /dev/vg0/lv_swap; then
-            echo "Error: Failed to remove swap logical volume." >&2
-            exit 1
-        fi
-        if ! lvextend -l +100%FREE /dev/vg0/lv_home; then
-            echo "Error: Failed to extend home logical volume." >&2
-            exit 1
-        fi
-        if ! resize2fs /dev/vg0/lv_home; then
-            echo "Error: Failed to resize home logical volume." >&2
-            exit 1
-        fi
+    if ! lvremove -y /dev/vg0/lv_swap; then
+        echo "Error: Failed to remove swap logical volume." >&2
+        exit 1
     fi
-
+    umount /mnt/home || { echo "Error: Failed to unmount home logical volume." >&2; exit 1; }
+    if ! lvextend -l +100%FREE /dev/vg0/lv_home; then
+        echo "Error: Failed to extend home logical volume." >&2
+        exit 1
+    fi
+    if ! resize2fs /dev/vg0/lv_home; then
+        echo "Error: Failed to resize home logical volume." >&2
+        exit 1
+    fi
+    
+    mount /dev/vg0/lv_home /mnt/home || { echo "Error: Failed to mount home logical volume." >&2; exit 1; 
+    
     log "ZRAM configured successfully, swap removed, home LV expanded, and zramswap service created"
     echo -e "${GREEN}[*] ZRAM configured, swap removed, home LV expanded, and zramswap service created.${RESET}"
 }
