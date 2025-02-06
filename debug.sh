@@ -413,7 +413,6 @@ install_blackarch() {
     arch-chroot /mnt curl -O https://blackarch.org/strap.sh
     arch-chroot /mnt chmod +x strap.sh
     arch-chroot /mnt ./strap.sh
-    arch-chroot /mnt pacman -Syyu --noconfirm blackarch
 }
 
 install_graphics_driver() {
@@ -603,7 +602,7 @@ install_bootloader() {
         luks_partition_uuid=$(blkid -s UUID -o value "${dev_path}p2")
         arch-chroot /mnt bash -c "echo 'GRUB_CMDLINE_LINUX=\"cryptdevice=UUID=$luks_partition_uuid:cryptroot root=/dev/mapper/lv_root\"' >> /etc/default/grub"
     else
-        root_partition_uuid=$(blkid -s UUID -o value "${dev_path}p2")
+        root_partition_uuid=$(blkid -s UUID -o value "/dev/vg0/lv_root")
         arch-chroot /mnt bash -c "echo 'GRUB_CMDLINE_LINUX=\"root=UUID=$root_partition_uuid\"' >> /etc/default/grub"
     fi
 
