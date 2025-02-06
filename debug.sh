@@ -48,7 +48,7 @@ execute_command() {
     local cmd="$1"
     local desc="$2"
     echo -e "${GREEN}[*] $desc...${RESET}"
-    
+
     if eval "$cmd"; then
         echo -e "${GREEN}[*] Completed: $desc${RESET}"
     else
@@ -58,6 +58,8 @@ execute_command() {
             exit 1
         fi
     fi
+    
+    read -rp "Press any key to continue..."
 }
 
 validate_device_path() {
@@ -104,31 +106,42 @@ identify_installation_disk() {
     echo "$dev_path"
 }
 
-identify_installation_disk() {
-    # Prompt user to identify the installation disk
-    read -erp "Enter the device you want to install to [e.g., sda, nvme0n1]: " user_input
+partition_and_encrypt() {
+    local dev_path=$1
+    local encryption_choice=$2
 
-    # Ensure the device path includes /dev/
-    if [[ ! "$user_input" =~ ^/dev/ ]]; then
-        dev_path="/dev/$user_input"
-    else
-        dev_path="$user_input"
-    fi
-
-    # Validate device path
     dev_path=$(validate_device_path "$dev_path")
+    echo -e "${GREEN}[*] Creating boot partition...${RESET}"
 
-    # Display selected device information with partitions
-    echo "[!] You have selected $dev_path for installation. Please make sure this is the correct drive."
+    # Debugging: Print the value of dev_path before the execute_command call
+    echo -e "${YELLOW}[DEBUG] dev_path before partitioning: $dev_path${RESET}"
 
-    # Confirm user's choice
-    read -p "Are you sure you want to install on $dev_path? This will erase all data on the drive. (y/n): " confirm_choice
-    if [[ "$confirm_choice" != "y" ]]; then
-        echo "Installation disk selection canceled."
-        exit 1
+    # Create partitions and format ESP
+    execute_command "parted --script $dev_path mklabel gpt mkpart ESP fat32 1MiB 512MiB set 1 boot on mkpart primary 512MiB 100%" "create partitions on $dev_path"
+
+    read -rp "Press any key to continue..."
+
+    # Debugging: Print the value of dev_path after the execute_command call
+    echo -e "${YELLOW}[DEBUG] dev_path after partitioning: $dev_path${RESET}"
+
+    execute_command "mkfs.fat -F32 ${dev_path}p1" "format the ESP partition"
+
+    read -rp "Press any key to continue..."
+
+    if [ "$encryption_choice" == "y" ]; then
+        echo -e "${GREEN}[*] Creating LUKS container on ${dev_path}p2...${RESET}"
+        cryptsetup luksFormat --type luks2 --hash sha512 --key-size 512 --iter-time 5000 --pbkdf argon2id --cipher aes-xts-plain64 --sector-size 4096 "${dev_path}p2"
+
+        read -rp "Press any key to continue..."
+
+        echo -e "${GREEN}[*] Opening LUKS container on ${dev_path}p2 as cryptroot...${RESET}"
+        cryptsetup open --type luks "${dev_path}p2" cryptroot
+
+        # Verify device mapping for encryption
+        execute_command "cryptsetup status cryptroot" "verify the device mapping for encryption"
+
+        read -rp "Press any key to continue..."
     fi
-
-    echo "$dev_path"
 }
 
 securely_wipe_disk() {
