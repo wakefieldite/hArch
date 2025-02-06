@@ -600,20 +600,38 @@ install_bootloader() {
     # Set the GRUB_CMDLINE_LINUX based on the encryption choice
     if [ "$encryption_choice" == "y" ]; then
         luks_partition_uuid=$(blkid -s UUID -o value "${dev_path}p2")
-        arch-chroot /mnt bash -c "echo 'GRUB_CMDLINE_LINUX_DEFAULT=\"quiet splash cryptdevice=UUID=$luks_partition_uuid:cryptroot root=/dev/mapper/vg0-lv_root\"' >> /etc/default/grub && update-grub"
+        root_partition_uuid=$(blkid -s UUID -o value "/dev/vg0/lv_root")
+        arch-chroot /mnt bash -c "echo 'GRUB_CMDLINE_LINUX_DEFAULT=\"quiet splash cryptdevice=UUID=$luks_partition_uuid:cryptroot root=$root_partition_uuid\"' >> /etc/default/grub && update-grub"
     else
         root_partition_uuid=$(blkid -s UUID -o value "/dev/vg0/lv_root")
-        arch-chroot /mnt bash -c "echo 'GRUB_CMDLINE_LINUX_DEFAULT=\"root=UUID=/dev/mapper/vg0-lv_root\"' >> /etc/default/grub && update-grub"
+        arch-chroot /mnt bash -c "echo 'GRUB_CMDLINE_LINUX_DEFAULT=\"root=UUID=$root_partition_uuid\"' >> /etc/default/grub && update-grub"
     fi
 
     # Generate the GRUB configuration
+    echo -e "${GREEN}[*] Generating GRUB configuration...${RESET}"
     arch-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg
+    if [ $? -ne 0 ]; then
+        echo -e "${RED}[ERROR] Failed to generate GRUB configuration.${RESET}"
+        exit 1
+    fi
 
     # Install the GRUB bootloader
+    echo -e "${GREEN}[*] Installing GRUB bootloader...${RESET}"
     arch-chroot /mnt grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB
+    if [ $? -ne 0 ]; then
+        echo -e "${RED}[ERROR] Failed to install GRUB bootloader.${RESET}"
+        exit 1
+    fi
 
     # Regenerate the initramfs
+    echo -e "${GREEN}[*] Regenerating initramfs...${RESET}"
     arch-chroot /mnt mkinitcpio -P
+    if [ $? -ne 0 ]; then
+        echo -e "${RED}[ERROR] Failed to regenerate initramfs.${RESET}"
+        exit 1
+    fi
+
+    echo -e "${GREEN}[*] Bootloader installation completed successfully.${RESET}"
 }
 
 installer() {
