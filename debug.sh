@@ -491,10 +491,18 @@ safely_unmount_devices() {
 }
 
 generate_initramfs() {
+    local encryption_choice=$1
     echo -e "${GREEN}[*] Generating initramfs...${RESET}"
-    hooks="base udev autodetect modconf kms block encrypt lvm2 btrfs keyboard fsck"
+
+    if [ "$encryption_choice" == "y" ]; then
+        hooks="base udev autodetect modconf kms block encrypt lvm2 btrfs keyboard fsck"
+    else
+        hooks="base udev autodetect modconf kms block lvm2 btrfs keyboard fsck"
+    fi
+
     arch-chroot /mnt bash -c "sed -i 's/^HOOKS=.*/HOOKS=($hooks)/' /etc/mkinitcpio.conf && mkinitcpio -P"
 }
+
 
 create_crypttab_entry() {
     if uuid=$(blkid -s UUID -o value /dev/mapper/cryptroot); then
@@ -672,7 +680,7 @@ main() {
     install_software
     #install_blackarch
     install_graphics_driver
-    generate_initramfs
+    generate_initramfs "$encryption_choice"
 
     if [ "$encryption_choice" == "y" ]; then
         create_crypttab_entry
