@@ -86,8 +86,15 @@ identify_installation_disk() {
     # Prompt user to identify the installation disk
     read -erp "Enter the device you want to install to [e.g., sda, nvme0n1]: " dev_path
 
-    # Validate device path
-    dev_path=$(validate_device_path "$dev_path")
+    # Set default value if dev_path is empty
+    if [[ -z "$dev_path" ]]; then
+        dev_path="/dev/nvme0n1"
+    fi
+
+    # Ensure the device path includes /dev/
+    if [[ ! "$dev_path" =~ ^/dev/ ]]; then
+        dev_path="/dev/$dev_path"
+    fi
 
     # Display selected device information with partitions
     echo "[!] You have selected $dev_path for installation. Please make sure this is the correct drive."
@@ -98,6 +105,9 @@ identify_installation_disk() {
         echo "Installation disk selection canceled."
         exit 1
     fi
+
+    # Validate device path
+    dev_path=$(validate_device_path "$dev_path")
 
     echo "$dev_path"
 }
