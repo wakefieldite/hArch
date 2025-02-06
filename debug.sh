@@ -203,7 +203,7 @@ createLVM2() {
     read -rp "Press any key to continue..."
 
     echo -e "${GREEN}[*] Resizing home logical volume...${RESET}"
-    lvresize -l -100%FREE "/dev/vg0/lv_home"
+    lvresize -L 1G "/dev/vg0/lv_home"
     read -rp "Press any key to continue..."
     
     echo -e "${GREEN}[*] Creating logical volume for usr...${RESET}"
