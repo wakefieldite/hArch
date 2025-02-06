@@ -575,7 +575,7 @@ EOF
         exit 1
     fi
     
-    mount /dev/vg0/lv_home /mnt/home || { echo "Error: Failed to mount home logical volume." >&2; exit 1; 
+    mount /dev/vg0/lv_home /mnt/home || { echo "Error: Failed to mount home logical volume." >&2; exit 1; }
     
     log "ZRAM configured successfully, swap removed, home LV expanded, and zramswap service created"
     echo -e "${GREEN}[*] ZRAM configured, swap removed, home LV expanded, and zramswap service created.${RESET}"
