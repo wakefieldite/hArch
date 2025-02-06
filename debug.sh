@@ -79,22 +79,21 @@ validate_device_path() {
 
 identify_installation_disk() {
     # Prompt user to identify the installation disk
-    read -erp "Enter the device you want to install to [e.g., sda, nvme0n1]: " dev_path
-
-    # Set default value if dev_path is empty
-    if [[ -z "$dev_path" ]]; then
-        dev_path="/dev/nvme0n1"
-    fi
+    read -erp "Enter the device you want to install to [e.g., sda, nvme0n1]: " user_input
 
     # Ensure the device path includes /dev/
-    if [[ ! "$dev_path" =~ ^/dev/ ]]; then
-        dev_path="/dev/$dev_path"
+    if [[ ! "$user_input" =~ ^/dev/ ]]; then
+        dev_path="/dev/$user_input"
+    else
+        dev_path="$user_input"
     fi
 
     # Validate device path
     dev_path=$(validate_device_path "$dev_path")
+
+    # Display selected device information with partitions
     echo "[!] You have selected $dev_path for installation. Please make sure this is the correct drive."
-    
+
     # Confirm user's choice
     read -p "Are you sure you want to install on $dev_path? This will erase all data on the drive. (y/n): " confirm_choice
     if [[ "$confirm_choice" != "y" ]]; then
@@ -102,71 +101,59 @@ identify_installation_disk() {
         exit 1
     fi
 
-    echo "[DEBUG] Validated device path: $dev_path"
+    echo "$dev_path"
+}
+
+identify_installation_disk() {
+    # Prompt user to identify the installation disk
+    read -erp "Enter the device you want to install to [e.g., sda, nvme0n1]: " user_input
+
+    # Ensure the device path includes /dev/
+    if [[ ! "$user_input" =~ ^/dev/ ]]; then
+        dev_path="/dev/$user_input"
+    else
+        dev_path="$user_input"
+    fi
+
+    # Validate device path
+    dev_path=$(validate_device_path "$dev_path")
+
+    # Display selected device information with partitions
+    echo "[!] You have selected $dev_path for installation. Please make sure this is the correct drive."
+
+    # Confirm user's choice
+    read -p "Are you sure you want to install on $dev_path? This will erase all data on the drive. (y/n): " confirm_choice
+    if [[ "$confirm_choice" != "y" ]]; then
+        echo "Installation disk selection canceled."
+        exit 1
+    fi
 
     echo "$dev_path"
 }
 
-partition_and_encrypt() {
-    local dev_path=$1
-    local encryption_choice=$2
-
-    # Ensure the device path is validated and correctly set
-    dev_path=$(validate_device_path "$dev_path")
-    echo -e "${GREEN}[*] Creating boot partition...${RESET}"
-
-    # Debugging: Print the value of dev_path before the execute_command call
-    echo -e "${YELLOW}[DEBUG] dev_path before partitioning: $dev_path${RESET}"
-
-    # Create partitions and format ESP
-    execute_command "parted --script $dev_path mklabel gpt mkpart ESP fat32 1MiB 512MiB set 1 boot on mkpart primary 512MiB 100%" "create partitions on $dev_path"
-
-    # Debugging: Print the value of dev_path after the execute_command call
-    echo -e "${YELLOW}[DEBUG] dev_path after partitioning: $dev_path${RESET}"
-
-    execute_command "mkfs.fat -F32 ${dev_path}p1" "format the ESP partition"
-
-    if [ "$encryption_choice" == "y" ]; then
-        echo -e "${GREEN}[*] Creating LUKS container on ${dev_path}p2...${RESET}"
-        cryptsetup luksFormat --type luks2 --hash sha512 --key-size 512 --iter-time 5000 --pbkdf argon2id --cipher aes-xts-plain64 --sector-size 4096 "${dev_path}p2"
-
-        echo -e "${GREEN}[*] Opening LUKS container on ${dev_path}p2 as cryptroot...${RESET}"
-        cryptsetup open --type luks "${dev_path}p2" cryptroot
-
-        # Verify device mapping for encryption
-        execute_command "cryptsetup status cryptroot" "verify the device mapping for encryption"
-    fi
-}
-
 securely_wipe_disk() {
-    dev_path=$(validate_device_path "$1")
     echo -e "${GREEN}[*] Securely wiping the disk...${RESET}"
 
     # Check if the device is an NVMe drive
-    if nvme id-ctrl "$dev_path" &>/dev/null; then
-        # Check if the device is a virtual NVMe drive
-        if [[ $(nvme id-ctrl "$dev_path" -o json | jq -r '.vid') == "0x80ee" ]]; then
-            echo "Skipping secure erase operations for virtual NVMe drive."
-            return
-        fi
-        # Perform Secure Erase
-        echo -e "${GREEN}[!] Performing Secure Erase on $dev_path...${RESET}"
-        if ! nvme format "$dev_path" --ses=1; then
-            echo "Failed to securely wipe the disk. Please check your system configuration and try again."
-            exit 1
-        fi
-        echo -e "${GREEN}[*] Securely wiped $dev_path successfully.${RESET}"
-    elif lsblk -no MODEL "$dev_path" | grep -iqE "ssd|solid state"; then
-        # Perform secure erase for non-NVMe SSDs
-        echo -e "${GREEN}[!] Performing Secure Erase on $dev_path...${RESET}"
-        if ! hdparm --user-master u --security-set-pass p "$dev_path" && hdparm --user-master u --security-erase p "$dev_path"; then
-            echo "Failed to securely wipe the SSD. Please check your system configuration and try again."
-            exit 1
-        fi
-        echo -e "${GREEN}[*] Securely wiped $dev_path successfully.${RESET}"
-    else
-        echo "Device $dev_path is not an NVMe or SSD drive, skipping secure erase"
+    if ! nvme id-ctrl "$dev_path" &>/dev/null; then
+        echo "Device $dev_path is not an NVMe drive, skipping secure erase"
+        return
     fi
+
+    # Check if the device is a virtual NVMe drive
+    if [[ $(nvme id-ctrl "$dev_path" -o json | jq -r '.vid') == "0x80ee" ]]; then
+        echo "Skipping secure erase operations for virtual NVMe drive."
+        return
+    fi
+
+    # Perform Secure Erase
+    echo -e "${GREEN}[!] Performing Secure Erase on $dev_path...${RESET}"
+    if ! nvme format "$dev_path" --ses=1; then
+        echo "Failed to securely wipe the disk. Please check your system configuration and try again."
+        exit 1
+    fi
+
+    echo -e "${GREEN}[*] Securely wiped $dev_path successfully.${RESET}"
 }
 
 fill_encrypted_partition_with_random_data() {
@@ -531,20 +518,11 @@ main() {
     lsblk -o NAME,SIZE,TYPE,MOUNTPOINT,FSTYPE,LABEL | grep -E 'disk|part'
     dev_path=$(identify_installation_disk)
 
-    # Debugging: Print the value of dev_path after identifying the installation disk
-    echo -e "${YELLOW}[DEBUG] dev_path after identifying installation disk: $dev_path${RESET}"
-
     if [ "$encryption_choice" == "y" ]; then
         securely_wipe_disk "$dev_path"
     fi
 
-    # Debugging: Print the value of dev_path after securely wiping the disk
-    echo -e "${YELLOW}[DEBUG] dev_path after securely wiping disk: $dev_path${RESET}"
-
     partition_and_encrypt "$dev_path" "$encryption_choice"
-
-    # Debugging: Print the value of dev_path after partitioning and encryption
-    echo -e "${YELLOW}[DEBUG] dev_path after partitioning and encryption: $dev_path${RESET}"
 
     if [ "$encryption_choice" == "y" ]; then
         read -rp "Do you want to fill the disk with random data before creating logical volumes? (y/n): " fill_choice
