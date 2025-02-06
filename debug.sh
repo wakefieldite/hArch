@@ -602,7 +602,7 @@ install_bootloader() {
         arch-chroot /mnt bash -c "echo 'GRUB_CMDLINE_LINUX=\"cryptdevice=UUID=$luks_partition_uuid:cryptroot root=/dev/mapper/lv_root\"' >> /etc/default/grub"
     else
         root_partition_uuid=$(blkid -s UUID -o value "/dev/vg0/lv_root")
-        arch-chroot /mnt bash -c "echo 'GRUB_CMDLINE_LINUX=\"root=UUID=$root_partition_uuid\"' >> /etc/default/grub"
+        arch-chroot /mnt bash -c "sed -i 's/^GRUB_CMDLINE_LINUX=.*/GRUB_CMDLINE_LINUX=\"root=UUID=$root_partition_uuid\"/' /etc/default/grub"
     fi
 
     execute_command "arch-chroot /mnt grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB" "install GRUB"
