@@ -548,8 +548,6 @@ fs-type = swap
 EOF
 
     arch-chroot /mnt systemctl enable /usr/lib/systemd/systemd-zram-setup@zram0.service || { echo "Error: Failed to enable zram service." >&2; exit 1; }
-    arch-chroot /mnt systemctl start systemd-zram-setup@zram0.service || { echo "Error: Failed to start zram service." >&2; exit 1; }
-    arch-chroot /mnt swapon --show
     echo "Zram setup with zram-generator complete."
 
     # Create sysctl config for ZRAM optimization
