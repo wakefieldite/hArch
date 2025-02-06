@@ -364,21 +364,21 @@ add_mount_options_to_fstab() {
     }
 
     declare -A mount_points_options=(
-        ["/dev/vg0/lv_root"]="/mnt noatime,compress=zstd,autodefrag"
-        ["/dev/vg0/lv_home"]="/mnt/home noatime,compress=zstd,autodefrag"
-        ["/dev/vg0/lv_usr"]="/mnt/usr noatime,compress=zstd,autodefrag"
-        ["/dev/vg0/lv_var"]="/mnt/var noatime,compress=zstd,autodefrag"
-        ["/dev/vg0/lv_varlog"]="/mnt/var/log noatime"
-        ["/dev/vg0/lv_varlogaudit"]="/mnt/var/log/audit noatime"
-        ["/dev/vg0/lv_tmp"]="/mnt/tmp noatime"
-        ["/dev/vg0/lv_vartmp"]="/mnt/var/tmp noatime"
+        ["/dev/mapper/vg0-lv_root"]="/ noatime,compress=zstd,autodefrag"
+        ["/dev/mapper/vg0-lv_home"]="/home noatime,compress=zstd,autodefrag"
+        ["/dev/mapper/vg0-lv_usr"]="/usr noatime,compress=zstd,autodefrag"
+        ["/dev/mapper/vg0-lv_var"]="/var noatime,compress=zstd,autodefrag"
+        ["/dev/mapper/vg0-lv_varlog"]="/var/log noatime"
+        ["/dev/mapper/vg0-lv_varlogaudit"]="/var/log/audit noatime"
+        ["/dev/mapper/vg0-lv_tmp"]="/tmp noatime"
+        ["/dev/mapper/vg0-lv_vartmp"]="/var/tmp noatime"
         ["${dev_path}p1"]="/mnt/boot noatime"
     )
 
     if [ -e /mnt/etc/systemd/system/zramswap.service ]; then
         echo "ZRAM is enabled, no swap entry in fstab"
     else
-        mount_points_options["/dev/vg0/lv_swap"]="none swap sw 0 0"
+        mount_points_options["/dev/mapper/vg0-lv_swap"]="none swap sw 0 0"
         echo "Traditional swap is being used, adding swap entry to fstab"
     fi
 
@@ -645,7 +645,7 @@ main() {
     set_root_password
     set_user_info
     install_software
-    install_blackarch
+    #install_blackarch
     install_graphics_driver
     generate_initramfs
 
