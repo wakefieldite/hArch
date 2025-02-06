@@ -532,8 +532,22 @@ configure_dynamic_zram() {
     echo -e "${RED}[*] Why Not Enable ZRAM:${RESET}\n- Sufficient RAM: If you have plenty of RAM and don't use swap often, ZRAM may not provide significant benefits.\n- System Overhead: Compression and decompression operations may introduce slight CPU overhead."
 
     # Prompt user to enable ZRAM
-    read -rp "Do you want to enable ZRAM to replace swap? (yes/no): " user_input
-    [[ "$user_input" != "yes" ]] && echo -e "${RED}[*] ZRAM configuration aborted by user.${RESET}" && return
+    while true; do
+        read -rp "Do you want to enable ZRAM to replace swap? (yes/no): " user_input
+        case $user_input in
+            yes|no)
+                break
+                ;;
+            *)
+                echo "Please answer yes or no."
+                ;;
+        esac
+    done
+
+    if [[ "$user_input" != "yes" ]]; then
+        echo -e "${RED}[*] ZRAM configuration aborted by user.${RESET}"
+        return
+    fi
 
     echo -e "${GREEN}[*] Installing and configuring ZRAM...${RESET}"
     pacstrap /mnt zram-generator || { echo "Error: Failed to install zram-generator." >&2; exit 1; }
