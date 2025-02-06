@@ -40,32 +40,6 @@ ask_full_disk_encryption() {
     done
 }
 
-ask_root_password() {
-    echo -e "${GREEN}[*] Setting the root password...${RESET}"
-    while true; do
-        password1=$(systemd-ask-password "Enter the root password: ")
-        password2=$(systemd-ask-password "Re-enter the root password: ")
-        if [[ "$password1" == "$password2" ]]; then
-            root_password="$password1"
-            break
-        fi
-        echo "Passwords do not match. Please try again."
-    done
-}
-
-ask_user_password() {
-    echo -e "${GREEN}[*] Setting the user password...${RESET}"
-    while true; do
-        password1=$(systemd-ask-password "Enter the user password: ")
-        password2=$(systemd-ask-password "Re-enter the user password: ")
-        if [[ "$password1" == "$password2" ]]; then
-            user_password="$password1"
-            break
-        fi
-        echo "Passwords do not match. Please try again."
-    done
-}
-
 execute_command() {
     local cmd="$1"
     local desc="$2"
@@ -306,20 +280,15 @@ add_mount_options_to_fstab() {
 }
 
 set_root_password() {
-    ask_root_password
-    echo "root:$root_password" | arch-chroot /mnt chpasswd
-}
-
-ask_username() {
-    read -p "Enter your username: " username
-    echo "$username"
+    echo -e "${GREEN}[*] Setting the root password...${RESET}"
+    arch-chroot /mnt passwd root
 }
 
 set_user_info() {
-    local username=$1
-    ask_user_password
+    read -p "Enter your username: " username
     arch-chroot /mnt useradd -m -G wheel -s /bin/bash "$username"
-    echo "$username:$user_password" | arch-chroot /mnt chpasswd
+    echo -e "${GREEN}[*] Setting the user password for $username...${RESET}"
+    arch-chroot /mnt passwd "$username"
 }
 
 install_software() {
@@ -565,8 +534,7 @@ main() {
     configure_dynamic_zram "$encryption_choice"
     add_mount_options_to_fstab "$dev_path" "$encryption_choice"
     set_root_password
-    username=$(ask_username)
-    set_user_info "$username"
+    set_user_info
     install_software
     install_blackarch
     install_graphics_driver
