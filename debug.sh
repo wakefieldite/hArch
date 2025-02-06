@@ -634,8 +634,7 @@ main() {
     configure_dynamic_zram "$encryption_choice"
     add_mount_options_to_fstab "$dev_path" "$encryption_choice"
     set_root_password
-    username=$(ask_username)
-    set_user_info "$username"
+    set_user_info
     install_software
     install_blackarch
     install_graphics_driver
