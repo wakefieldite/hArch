@@ -87,7 +87,7 @@ validate_device_path() {
 
     # Set default value if dev_path is empty
     if [[ -z "$dev_path" ]]; then
-        dev_path="/dev/nvme3n1"
+        dev_path="/dev/nvme0n1"
     fi
 
     # Ensure the device path includes /dev/
