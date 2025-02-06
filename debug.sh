@@ -1,9 +1,13 @@
 #!/usr/bin/env bash
 
-declare -g root_password  # Declare root_password as a global variable
-declare -g user_password  # Declare user_password as a global variable
-declare -g username  # Declare username as a global variable
-declare -g dev_path
+# Color definitions
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+PURPLE='\033[0;35m'
+CYAN='\033[0;36m'
+RESET='\033[0m'
 
 check_root() {
     [[ $EUID -ne 0 ]] && echo "Please run the script as root." && exit 1
@@ -136,8 +140,15 @@ partition_and_encrypt() {
     dev_path=$(validate_device_path "$dev_path")
     echo -e "${GREEN}[*] Creating boot partition...${RESET}"
 
+    # Debugging: Print the value of dev_path before the execute_command call
+    echo -e "${YELLOW}Debug: dev_path before partitioning: $dev_path${RESET}"
+
     # Create partitions and format ESP
     execute_command "parted --script $dev_path mklabel gpt mkpart ESP fat32 1MiB 512MiB set 1 boot on mkpart primary 512MiB 100%" "create partitions on $dev_path"
+
+    # Debugging: Print the value of dev_path after the execute_command call
+    echo -e "${YELLOW}Debug: dev_path after partitioning: $dev_path${RESET}"
+
     execute_command "mkfs.fat -F32 ${dev_path}p1" "format the ESP partition"
 
     if [ "$encryption_choice" == "y" ]; then
