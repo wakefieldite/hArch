@@ -570,7 +570,7 @@ EOF
         echo "Error: Failed to extend home logical volume." >&2
         exit 1
     fi
-    if ! resize2fs /dev/vg0/lv_home; then
+    if ! btrfs filesystem resize max /dev/vg0/lv_home; then
         echo "Error: Failed to resize home logical volume." >&2
         exit 1
     fi
