@@ -85,6 +85,11 @@ execute_command() {
 validate_device_path() {
     local dev_path=$1
 
+    # Set default value if dev_path is empty
+    if [[ -z "$dev_path" ]]; then
+        dev_path="/dev/nvme3n1"
+    fi
+
     # Ensure the device path includes /dev/
     if [[ ! "$dev_path" =~ ^/dev/ ]]; then
         dev_path="/dev/$dev_path"
