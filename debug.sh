@@ -202,6 +202,10 @@ createLVM2() {
     lvcreate -l 100%FREE -n lv_home "vg0"
     read -rp "Press any key to continue..."
 
+    echo -e "${GREEN}[*] Resizing home logical volume...${RESET}"
+    lvresize -l -100%FREE "/dev/vg0/lv_home"
+    read -rp "Press any key to continue..."
+    
     echo -e "${GREEN}[*] Creating logical volume for usr...${RESET}"
     lvcreate -L 20G -n lv_usr "vg0"
     read -rp "Press any key to continue..."
@@ -230,7 +234,7 @@ createLVM2() {
     lvcreate -L 8G -n lv_swap "vg0"
     read -rp "Press any key to continue..."
 
-    echo -e "${GREEN}[*] Resizing home logical volume...${RESET}"
+    echo -e "${GREEN}[*] Resizing home logical volume to use remaining free space...${RESET}"
     lvresize -l 100%FREE "/dev/vg0/lv_home"
     read -rp "Press any key to continue..."
 }
