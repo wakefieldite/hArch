@@ -140,17 +140,31 @@ partition_and_encrypt() {
 }
 
 securely_wipe_disk() {
+    local dev_path=$1
     echo -e "${GREEN}[*] Securely wiping the disk...${RESET}"
 
     # Check if the device is an NVMe drive
     if ! nvme id-ctrl "$dev_path" &>/dev/null; then
-        echo "Device $dev_path is not an NVMe drive, skipping secure erase"
+        echo "Device $dev_path is not an NVMe drive, skipping secure erase."
         return
     fi
 
-    # Check if the device is a virtual NVMe drive
-    if [[ $(nvme id-ctrl "$dev_path" -o json | jq -r '.vid') == "0x80ee" ]]; then
-        echo "Skipping secure erase operations for virtual NVMe drive."
+    # Get the vid value
+    vid=$(nvme id-ctrl "$dev_path" | grep -i "vid" | awk '{print $3}')
+    vid_hex=$(printf "0x%x" $vid)
+
+    # Check for known virtual machine vendor IDs
+    # Known virtual machine vendor IDs (VMware: 0x5549, VirtualBox: 0x80ee, QEMU: 0x1af4, Hyper-V: 0x1414)
+    if [[ "$vid_hex" == "0x5549" || "$vid_hex" == "0x80ee" || "$vid_hex" == "0x1af4" || "$vid_hex" == "0x1414" ]]; then
+        if [[ "$vid_hex" == "0x5549" ]]; then
+            echo "Skipping secure erase operations for VMware virtual NVMe drive (VID: $vid_hex)."
+        elif [[ "$vid_hex" == "0x80ee" ]]; then
+            echo "Skipping secure erase operations for VirtualBox virtual NVMe drive (VID: $vid_hex)."
+        elif [[ "$vid_hex" == "0x1af4" ]]; then
+            echo "Skipping secure erase operations for QEMU virtual NVMe drive (VID: $vid_hex)."
+        elif [[ "$vid_hex" == "0x1414" ]]; then
+            echo "Skipping secure erase operations for Hyper-V virtual NVMe drive (VID: $vid_hex)."
+        fi
         return
     fi
 
@@ -164,14 +178,33 @@ securely_wipe_disk() {
     echo -e "${GREEN}[*] Securely wiped $dev_path successfully.${RESET}"
 }
 
-fill_encrypted_partition_with_random_data() {
+fill_encrypted_partition() {
     echo -e "${GREEN}[*] Filling encrypted partition with random data...${RESET}"
-    if ! dd if=/dev/urandom of=/dev/mapper/cryptroot bs=10M status=progress; then
-        echo "Failed to fill encrypted partition with random data. Please check your system configuration."
+
+    # Check if the device exists
+    if [ ! -e /dev/mapper/cryptroot ]; then
+        echo "Encrypted partition /dev/mapper/cryptroot does not exist. Please check your configuration."
         exit 1
     fi
+
+    # Get the size of the encrypted partition
+    total_size=$(blockdev --getsize64 /dev/mapper/cryptroot)
+
+    if [[ -z "$total_size" ]]; then
+        echo "Failed to retrieve the size of the encrypted partition. Please check your system configuration."
+        exit 1
+    fi
+
+    chunk_size="10M"
+    chunk_size_bytes=$((1024 * 1024 * ${chunk_size%[A-Z]*}))
+    total_chunks=$(( (total_size + chunk_size_bytes - 1) / chunk_size_bytes ))
+
+    for ((i = 0; i < total_chunks; i++)); do
+        # Generate random data directly and write to the encrypted partition
+        dd if=/dev/urandom of=/dev/mapper/cryptroot bs="$chunk_size" count=1 seek="$i" status=progress
+    done
+
     echo -e "${GREEN}[*] Encrypted partition filled with random data successfully.${RESET}"
-    
 }
 
 createLVM2() {
