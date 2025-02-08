@@ -533,7 +533,7 @@ generate_initramfs() {
         hooks="base udev autodetect modconf kms block lvm2 btrfs usr filesystems keyboard fsck"
     fi
 
-    arch-chroot /mnt bash -c "sed -i 's/^HOOKS=.*/HOOKS=($hooks)/' /etc/mkinitcpio.conf && mkinitcpio -P"
+    arch-chroot /mnt bash -c "sed -i 's/^HOOKS=.*/HOOKS=($hooks)/' /etc/mkinitcpio.conf && mkinitcpio -P linux"
 }
 
 
@@ -666,7 +666,7 @@ install_bootloader() {
     
     # Regenerate the initramfs
     echo -e "${GREEN}[*] Regenerating initramfs...${RESET}"
-    arch-chroot /mnt mkinitcpio -P
+    arch-chroot /mnt mkinitcpio -P linux
     if [ $? -ne 0 ]; then
         echo -e "${RED}[ERROR] Failed to regenerate initramfs.${RESET}"
         exit 1
