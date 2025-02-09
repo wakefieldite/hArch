@@ -376,7 +376,6 @@ add_mount_options_to_fstab() {
 
     declare -A mount_points_options=(
         ["/dev/mapper/vg0-lv_root"]="/ noatime,compress=zstd,autodefrag"
-        ["${dev_path}p1"]="/boot noatime"
         ["/dev/mapper/vg0-lv_home"]="/home noatime,compress=zstd,autodefrag"
         ["/dev/mapper/vg0-lv_usr"]="/usr noatime,compress=zstd,autodefrag"
         ["/dev/mapper/vg0-lv_var"]="/var noatime,compress=zstd,autodefrag"
@@ -384,6 +383,7 @@ add_mount_options_to_fstab() {
         ["/dev/mapper/vg0-lv_varlogaudit"]="/var/log/audit noatime"
         ["/dev/mapper/vg0-lv_tmp"]="/tmp noatime"
         ["/dev/mapper/vg0-lv_vartmp"]="/var/tmp noatime"
+        ["${dev_path}p1"]="/boot noatime"
     )
 
     if [ -e /mnt/etc/systemd/system/zramswap.service ]; then
