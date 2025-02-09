@@ -280,41 +280,30 @@ formatPartitions() {
     echo -e "${GREEN}[*] Formatting root partition...${RESET}"
     mkfs.btrfs "/dev/vg0/lv_root"
     
-
     echo -e "${GREEN}[*] Formatting home partition...${RESET}"
     mkfs.btrfs "/dev/vg0/lv_home"
     
-
     echo -e "${GREEN}[*] Formatting usr partition...${RESET}"
     mkfs.btrfs "/dev/vg0/lv_usr"
     
-
     echo -e "${GREEN}[*] Formatting var partition...${RESET}"
     mkfs.btrfs "/dev/vg0/lv_var"
     
-
     echo -e "${GREEN}[*] Formatting varlog partition...${RESET}"
     mkfs.btrfs "/dev/vg0/lv_varlog"
     
-
     echo -e "${GREEN}[*] Formatting varlogaudit partition...${RESET}"
     mkfs.btrfs "/dev/vg0/lv_varlogaudit"
     
-
     echo -e "${GREEN}[*] Formatting tmp partition...${RESET}"
     mkfs.btrfs "/dev/vg0/lv_tmp"
     
-
     echo -e "${GREEN}[*] Formatting vartmp partition...${RESET}"
     mkfs.btrfs "/dev/vg0/lv_vartmp"
     
-
     echo -e "${GREEN}[*] Formatting swap partition...${RESET}"
-    mkswap "/dev/vg0/lv_swap"
-    
+    mkswap "/dev/vg0/lv_swap"   
 }
-
-
 
 mountFilesystems() {
     local encryption_choice=$1
@@ -323,53 +312,42 @@ mountFilesystems() {
 
     echo -e "${GREEN}[*] Mounting root filesystem...${RESET}"
     mount -o noatime,compress=zstd,autodefrag "/dev/vg0/lv_root" /mnt
-    
-
-    echo -e "${GREEN}[*] Creating and mounting home directory...${RESET}"
-    mkdir -p /mnt/home
-    mount -o noatime,compress=zstd,autodefrag "/dev/vg0/lv_home" /mnt/home
-    
-
-    echo -e "${GREEN}[*] Creating and mounting usr directory...${RESET}"
-    mkdir -p /mnt/usr
-    mount -o noatime,compress=zstd,autodefrag "/dev/vg0/lv_usr" /mnt/usr
-    
-
-    echo -e "${GREEN}[*] Creating and mounting var directory...${RESET}"
-    mkdir -p /mnt/var
-    mount -o noatime,compress=zstd,autodefrag "/dev/vg0/lv_var" /mnt/var
-    
-
-    echo -e "${GREEN}[*] Creating and mounting varlog directory...${RESET}"
-    mkdir -p /mnt/var/log
-    mount -o noatime "/dev/vg0/lv_varlog" /mnt/var/log
-    
-
-    echo -e "${GREEN}[*] Creating and mounting varlogaudit directory...${RESET}"
-    mkdir -p /mnt/var/log/audit
-    mount -o noatime "/dev/vg0/lv_varlogaudit" /mnt/var/log/audit
-    
-
-    echo -e "${GREEN}[*] Creating and mounting tmp directory...${RESET}"
-    mkdir -p /mnt/tmp
-    mount -o noatime "/dev/vg0/lv_tmp" /mnt/tmp
-    
-
-    echo -e "${GREEN}[*] Creating and mounting vartmp directory...${RESET}"
-    mkdir -p /mnt/var/tmp
-    mount -o noatime "/dev/vg0/lv_vartmp" /mnt/var/tmp
-    
-
-    echo -e "${GREEN}[*] Enabling swap...${RESET}"
-    swapon "/dev/vg0/lv_swap"
-    
 
     echo -e "${GREEN}[*] Creating and mounting boot directory...${RESET}"
     mkdir -p /mnt/boot
     mount "${dev_path}p1" /mnt/boot
     
-}
+    echo -e "${GREEN}[*] Creating and mounting home directory...${RESET}"
+    mkdir -p /mnt/home
+    mount -o noatime,compress=zstd,autodefrag "/dev/vg0/lv_home" /mnt/home
+    
+    echo -e "${GREEN}[*] Creating and mounting usr directory...${RESET}"
+    mkdir -p /mnt/usr
+    mount -o noatime,compress=zstd,autodefrag "/dev/vg0/lv_usr" /mnt/usr
+    
+    echo -e "${GREEN}[*] Creating and mounting var directory...${RESET}"
+    mkdir -p /mnt/var
+    mount -o noatime,compress=zstd,autodefrag "/dev/vg0/lv_var" /mnt/var
+    
+    echo -e "${GREEN}[*] Creating and mounting varlog directory...${RESET}"
+    mkdir -p /mnt/var/log
+    mount -o noatime "/dev/vg0/lv_varlog" /mnt/var/log
 
+    echo -e "${GREEN}[*] Creating and mounting varlogaudit directory...${RESET}"
+    mkdir -p /mnt/var/log/audit
+    mount -o noatime "/dev/vg0/lv_varlogaudit" /mnt/var/log/audit
+
+    echo -e "${GREEN}[*] Creating and mounting tmp directory...${RESET}"
+    mkdir -p /mnt/tmp
+    mount -o noatime "/dev/vg0/lv_tmp" /mnt/tmp
+
+    echo -e "${GREEN}[*] Creating and mounting vartmp directory...${RESET}"
+    mkdir -p /mnt/var/tmp
+    mount -o noatime "/dev/vg0/lv_vartmp" /mnt/var/tmp
+
+    echo -e "${GREEN}[*] Enabling swap...${RESET}"
+    swapon "/dev/vg0/lv_swap" 
+}
 
 add_mount_options_to_fstab() {
     local dev_path=$1
@@ -398,6 +376,7 @@ add_mount_options_to_fstab() {
 
     declare -A mount_points_options=(
         ["/dev/mapper/vg0-lv_root"]="/ noatime,compress=zstd,autodefrag"
+        ["${dev_path}p1"]="/boot noatime"
         ["/dev/mapper/vg0-lv_home"]="/home noatime,compress=zstd,autodefrag"
         ["/dev/mapper/vg0-lv_usr"]="/usr noatime,compress=zstd,autodefrag"
         ["/dev/mapper/vg0-lv_var"]="/var noatime,compress=zstd,autodefrag"
@@ -405,7 +384,6 @@ add_mount_options_to_fstab() {
         ["/dev/mapper/vg0-lv_varlogaudit"]="/var/log/audit noatime"
         ["/dev/mapper/vg0-lv_tmp"]="/tmp noatime"
         ["/dev/mapper/vg0-lv_vartmp"]="/var/tmp noatime"
-        ["${dev_path}p1"]="/mnt/boot noatime"
     )
 
     if [ -e /mnt/etc/systemd/system/zramswap.service ]; then
@@ -436,9 +414,34 @@ set_user_info() {
     arch-chroot /mnt passwd "$username"
 }
 
+# Function to ask for hostname
+ask_hostname() {
+    while true; do
+        read -p "Please enter a hostname: " hostname
+        if [[ -z "$hostname" ]]; then
+            echo "Hostname cannot be empty. Please enter a valid hostname."
+        elif [[ ! "$hostname" =~ ^[a-zA-Z0-9][a-zA-Z0-9-]{1,62}[a-zA-Z0-9]$ ]]; then
+            echo "Invalid hostname. It should be 2-63 characters long, start and end with an alphanumeric character, and only contain alphanumeric characters and hyphens."
+        else
+            break
+        fi
+    done
+    
+    arch-chroot /mnt ln -sf /usr/share/zoneinfo/UTC /etc/localtime
+    arch-chroot /mnt hwclock --systohc --utc
+
+    echo "en_US.UTF-8 UTF-8" > /mnt/etc/locale.gen
+    arch-chroot /mnt locale-gen
+    echo "LANG=en_US.UTF-8" > /mnt/etc/locale.conf
+
+    echo "$hostname" > /mnt/etc/hostname
+    echo -e "127.0.0.1\tlocalhost\n::1\tlocalhost\n127.0.1.1\t$hostname.localdomain $hostname" > /mnt/etc/hosts
+}
+
+
 install_software() {
     echo -e "${GREEN}[*] Installing additional software...${RESET}"
-    arch-chroot /mnt pacman -S --noconfirm aerc alacritty alsa-utils bluez btop cmake dhcpcd dmenu fd ffmpeg ffmpegthumbnailer firefox fish flameshot git ibus iw keepassxc lm_sensors lvm2 mlocate mpd mpv ncmpcpp neofetch neovim networkmanager ntfs-3g obsidian openvpn pass pipewire pipewire-alsa pipewire-jack pipewire-pulse qbittorrent qpwgraph ranger ripgrep sddm sway systemd-resolvconf terminus-font tmux upower virtualbox w3m wildmidi yakuake
+    arch-chroot /mnt pacman -S --noconfirm aerc alacritty alsa-utils bluez btop cmake dhcpcd dmenu fd ffmpeg ffmpegthumbnailer firefox fish flameshot git ibus iw keepassxc lm_sensors ly lvm2 mlocate mpd mpv ncmpcpp neofetch neovim networkmanager ntfs-3g obsidian openvpn pass pipewire pipewire-alsa pipewire-jack pipewire-pulse qbittorrent qpwgraph ranger ripgrep sddm sway systemd-resolvconf terminus-font tmux upower virtualbox w3m wildmidi yakuake
 }
 
 install_blackarch() {
@@ -710,6 +713,7 @@ main() {
     add_mount_options_to_fstab "$dev_path" "$encryption_choice"
     set_root_password
     set_user_info
+    ask_hostname
     install_software
     #install_blackarch
     install_graphics_driver
