@@ -362,7 +362,8 @@ add_mount_options_to_fstab() {
     update_fstab_entry() {
         local device="$1"
         local mount_point="$2"
-        local options="$3"
+        local fstype="$3"
+        local options="$4"
         
         uuid=$(blkid -s UUID -o value "$device")
 
@@ -371,19 +372,19 @@ add_mount_options_to_fstab() {
         mount_point_escaped=$(echo "$mount_point" | sed 's/\//\\\//g')
 
         # Update fstab entry with mount options
-        sed -i "s|^UUID=$uuid_escaped\s\+$mount_point_escaped\s\+\w\+\s\+\w\+|UUID=$uuid_escaped $mount_point btrfs $options|" /mnt/etc/fstab
+        sed -i "s|^UUID=$uuid_escaped\s\+$mount_point_escaped\s\+\w\+\s\+\w\+|UUID=$uuid_escaped $mount_point $fstype $options|" /mnt/etc/fstab
     }
 
     declare -A mount_points_options=(
-        ["/dev/mapper/vg0-lv_root"]="/ noatime,compress=zstd,autodefrag"
-        ["/dev/mapper/vg0-lv_home"]="/home noatime,compress=zstd,autodefrag"
-        ["/dev/mapper/vg0-lv_usr"]="/usr noatime,compress=zstd,autodefrag"
-        ["/dev/mapper/vg0-lv_var"]="/var noatime,compress=zstd,autodefrag"
-        ["/dev/mapper/vg0-lv_varlog"]="/var/log noatime"
-        ["/dev/mapper/vg0-lv_varlogaudit"]="/var/log/audit noatime"
-        ["/dev/mapper/vg0-lv_tmp"]="/tmp noatime"
-        ["/dev/mapper/vg0-lv_vartmp"]="/var/tmp noatime"
-        ["${dev_path}p1"]="/boot noatime"
+        ["/dev/mapper/vg0-lv_root"]="/ btrfs noatime,compress=zstd,autodefrag"
+        ["/dev/mapper/vg0-lv_home"]="/home btrfs noatime,compress=zstd,autodefrag"
+        ["/dev/mapper/vg0-lv_usr"]="/usr btrfs noatime,compress=zstd,autodefrag"
+        ["/dev/mapper/vg0-lv_var"]="/var btrfs noatime,compress=zstd,autodefrag"
+        ["/dev/mapper/vg0-lv_varlog"]="/var/log btrfs noatime"
+        ["/dev/mapper/vg0-lv_varlogaudit"]="/var/log/audit btrfs noatime"
+        ["/dev/mapper/vg0-lv_tmp"]="/tmp btrfs noatime"
+        ["/dev/mapper/vg0-lv_vartmp"]="/var/tmp btrfs noatime"
+        ["${dev_path}p1"]="/boot vfat noatime"
     )
 
     if [ -e /mnt/etc/systemd/system/zramswap.service ]; then
@@ -395,12 +396,15 @@ add_mount_options_to_fstab() {
 
     for device in "${!mount_points_options[@]}"; do
         mount_point="${mount_points_options[$device]%% *}"
-        options="${mount_points_options[$device]#* }"
-        update_fstab_entry "$device" "$mount_point" "$options"
+        fstype="${mount_points_options[$device]#* }"
+        options="${fstype#* }"
+        fstype="${fstype%% *}"
+        update_fstab_entry "$device" "$mount_point" "$fstype" "$options"
     done
 
     echo -e "${GREEN}[*] Mount options added to /etc/fstab successfully.${RESET}"
 }
+
 
 set_root_password() {
     echo -e "${GREEN}[*] Setting the root password...${RESET}"
