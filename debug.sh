@@ -641,22 +641,22 @@ install_bootloader() {
     echo -e "${GREEN}[*] Installing bootloader...${RESET}"
     arch-chroot /mnt pacman -S grub efibootmgr --noconfirm
 
-    # Set the GRUB_CMDLINE_LINUX based on the encryption choice
-    if [ "$encryption_choice" == "y" ]; then
-        luks_partition_uuid=$(blkid -s UUID -o value "${dev_path}p2")
-        root_partition_uuid=$(blkid -s UUID -o value "/dev/vg0/lv_root")
-        arch-chroot /mnt bash -c "echo 'GRUB_CMDLINE_LINUX_DEFAULT=\"quiet splash cryptdevice=UUID=$luks_partition_uuid:cryptroot root=$root_partition_uuid\"' >> /etc/default/grub"
-    else
-        root_partition_uuid=$(blkid -s UUID -o value "/dev/vg0/lv_root")
-        arch-chroot /mnt bash -c "echo 'GRUB_CMDLINE_LINUX_DEFAULT=\"root=UUID=$root_partition_uuid\"' >> /etc/default/grub"
-    fi
-
     # Install the GRUB bootloader
     echo -e "${GREEN}[*] Installing GRUB bootloader...${RESET}"
     arch-chroot /mnt grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB
     if [ $? -ne 0 ]; then
         echo -e "${RED}[ERROR] Failed to install GRUB bootloader.${RESET}"
         exit 1
+    fi
+
+    # Set the GRUB_CMDLINE_LINUX based on the encryption choice
+    if [ "$encryption_choice" == "y" ]; then
+        luks_partition_uuid=$(blkid -s UUID -o value "${dev_path}p2")
+        root_partition_uuid=$(blkid -s UUID -o value "/dev/vg0/lv_root")
+        arch-chroot /mnt bash -c "echo 'GRUB_CMDLINE_LINUX_DEFAULT=\"quiet splash cryptdevice=UUID=$luks_partition_uuid:cryptroot root=/dev/mapper/vg0-lv_root\"' >> /etc/default/grub"
+    else
+        root_partition_uuid=$(blkid -s UUID -o value "/dev/vg0/lv_root")
+        arch-chroot /mnt bash -c "echo 'GRUB_CMDLINE_LINUX_DEFAULT=\"root=UUID=$root_partition_uuid\"' >> /etc/default/grub"
     fi
 
     # Generate the GRUB configuration
