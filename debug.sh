@@ -364,15 +364,12 @@ add_mount_options_to_fstab() {
         local mount_point="$2"
         local fstype="$3"
         local options="$4"
-        
-        uuid=$(blkid -s UUID -o value "$device")
 
-        # Escape forward slashes for sed
-        uuid_escaped=$(echo "$uuid" | sed 's/\//\\\//g')
+        device_escaped=$(echo "$device" | sed 's/\//\\\//g')
         mount_point_escaped=$(echo "$mount_point" | sed 's/\//\\\//g')
 
         # Update fstab entry with mount options
-        sed -i "s|^UUID=$uuid_escaped\s\+$mount_point_escaped\s\+\w\+\s\+\w\+|UUID=$uuid_escaped $mount_point $fstype $options|" /mnt/etc/fstab
+        sed -i "s|^$device_escaped\s\+$mount_point_escaped\s\+\w\+\s\+\w\+|$device_escaped $mount_point $fstype $options|" /mnt/etc/fstab
     }
 
     declare -A mount_points_options=(
@@ -384,7 +381,6 @@ add_mount_options_to_fstab() {
         ["/dev/mapper/vg0-lv_varlogaudit"]="/var/log/audit btrfs noatime"
         ["/dev/mapper/vg0-lv_tmp"]="/tmp btrfs noatime"
         ["/dev/mapper/vg0-lv_vartmp"]="/var/tmp btrfs noatime"
-        ["${dev_path}p1"]="/boot vfat noatime"
     )
 
     if [ -e /mnt/etc/systemd/system/zramswap.service ]; then
@@ -394,6 +390,7 @@ add_mount_options_to_fstab() {
         echo "Traditional swap is being used, adding swap entry to fstab"
     fi
 
+    # Add or update entries for all mount points except boot
     for device in "${!mount_points_options[@]}"; do
         mount_point="${mount_points_options[$device]%% *}"
         fstype="${mount_points_options[$device]#* }"
@@ -402,9 +399,12 @@ add_mount_options_to_fstab() {
         update_fstab_entry "$device" "$mount_point" "$fstype" "$options"
     done
 
+    # Add or update the entry for the boot partition using UUID
+    boot_uuid=$(blkid -s UUID -o value "${dev_path}p1")
+    sed -i "s|^UUID=$boot_uuid\s\+/boot\s\+\w\+\s\+\w\+|UUID=$boot_uuid /boot vfat noatime|" /mnt/etc/fstab
+
     echo -e "${GREEN}[*] Mount options added to /etc/fstab successfully.${RESET}"
 }
-
 
 set_root_password() {
     echo -e "${GREEN}[*] Setting the root password...${RESET}"
@@ -414,6 +414,7 @@ set_root_password() {
 set_user_info() {
     read -p "Enter your username: " username
     arch-chroot /mnt useradd -m -G wheel -s /bin/bash "$username"
+    arch-chroot /mnt sed -i 's/^# %wheel ALL=(ALL:ALL) ALL/%wheel ALL=(ALL:ALL) ALL/' /etc/sudoers
     echo -e "${GREEN}[*] Setting the user password for $username...${RESET}"
     arch-chroot /mnt passwd "$username"
 }
@@ -501,23 +502,25 @@ configure_networking() {
         pacman -S --noconfirm nftables && \
         systemctl enable nftables.service && \
         cat > /etc/nftables.conf <<EOF
-        table inet filter {
-            chain input {
-                type filter hook input priority 0; policy drop;
-                ct state established,related accept
-                iif lo accept
-                ip protocol icmp accept
-                tcp dport ssh accept
-            }
-            chain forward {
-                type filter hook forward priority 0; policy drop;
-            }
-            chain output {
-                type filter hook output priority 0; policy accept;
-            }
-        }
-        EOF
-        systemctl start nftables.service
+table inet filter {
+    chain input {
+        type filter hook input priority 0; policy drop;
+        ct state established,related accept
+        iif lo accept
+        ip protocol icmp accept
+        tcp dport ssh accept
+    }
+    chain forward {
+        type filter hook forward priority 0; policy drop;
+    }
+    chain output {
+        type filter hook output priority 0; policy accept;
+    }
+}
+EOF
+        systemctl enable systemd-networkd.service && \
+        systemctl enable dhcpcd.service && \
+        systemctl enable systemd-resolved.service
     "
 }
 
@@ -656,7 +659,6 @@ install_bootloader() {
     # Set the GRUB_CMDLINE_LINUX based on the encryption choice
     if [ "$encryption_choice" == "y" ]; then
         luks_partition_uuid=$(blkid -s UUID -o value "${dev_path}p2")
-        root_partition_uuid=$(blkid -s UUID -o value "/dev/vg0/lv_root")
         arch-chroot /mnt bash -c "echo 'GRUB_CMDLINE_LINUX_DEFAULT=\"quiet splash cryptdevice=UUID=$luks_partition_uuid:cryptroot root=/dev/mapper/vg0-lv_root\"' >> /etc/default/grub"
     else
         root_partition_uuid=$(blkid -s UUID -o value "/dev/vg0/lv_root")
